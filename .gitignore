@@ -1,0 +1,20 @@
+﻿# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# SQLite live files (NEVER commit)
+*.db
+*.db-shm
+*.db-wal
+
+# Backups and logs
+backups/
+logs/
+*.log
+
+# Installer output
+installer/publish/
+installer/Output/
