@@ -1,0 +1,45 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- Colors -->
+    <Color x:Key="ColorBackground">#F7F8FA</Color>
+    <Color x:Key="ColorSurface">#FFFFFF</Color>
+    <Color x:Key="ColorBorder">#E4E7EC</Color>
+    <Color x:Key="ColorTextPrimary">#101828</Color>
+    <Color x:Key="ColorTextSecondary">#475467</Color>
+    <Color x:Key="ColorAccent">#0B6B5B</Color>
+    <Color x:Key="ColorAccentHover">#095648</Color>
+    <Color x:Key="ColorDanger">#B42318</Color>
+    <Color x:Key="ColorSuccess">#067647</Color>
+    <Color x:Key="ColorWarning">#B54708</Color>
+
+    <!-- Brushes -->
+    <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource ColorBackground}" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource ColorSurface}" />
+    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource ColorBorder}" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource ColorTextPrimary}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource ColorTextSecondary}" />
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource ColorAccent}" />
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource ColorAccentHover}" />
+    <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource ColorDanger}" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource ColorSuccess}" />
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource ColorWarning}" />
+
+    <!-- Typography -->
+    <sys:Double x:Key="FontSizeCaption">12</sys:Double>
+    <sys:Double x:Key="FontSizeBody">14</sys:Double>
+    <sys:Double x:Key="FontSizeSubtitle">16</sys:Double>
+    <sys:Double x:Key="FontSizeTitle">20</sys:Double>
+    <sys:Double x:Key="FontSizeDisplay">28</sys:Double>
+
+    <!-- Spacing -->
+    <Thickness x:Key="PaddingSmall">8</Thickness>
+    <Thickness x:Key="PaddingMedium">16</Thickness>
+    <Thickness x:Key="PaddingLarge">24</Thickness>
+
+    <!-- Radius -->
+    <CornerRadius x:Key="RadiusSmall">4</CornerRadius>
+    <CornerRadius x:Key="RadiusMedium">8</CornerRadius>
+    <CornerRadius x:Key="RadiusLarge">12</CornerRadius>
+</ResourceDictionary>
