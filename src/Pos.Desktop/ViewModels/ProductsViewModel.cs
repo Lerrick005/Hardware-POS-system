@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Pos.Application.Catalog;
+using Pos.Desktop.Views;
 using Pos.Domain.Catalog;
 
 namespace Pos.Desktop.ViewModels;
@@ -23,6 +24,9 @@ public partial class ProductsViewModel : ObservableObject
     private bool isBusy;
 
     public ObservableCollection<Product> Products { get; } = new();
+
+    /// <summary>Set by App composition so this VM does not depend on the DI container.</summary>
+    public Func<AddProductView>? CreateAddProductDialog { get; set; }
 
     public ProductsViewModel(IProductRepository repo, ILogger<ProductsViewModel> logger)
     {
@@ -52,7 +56,7 @@ public partial class ProductsViewModel : ObservableObject
         }
         catch (OperationCanceledException)
         {
-            // superseded by a newer keystroke
+            // superseded by newer keystroke
         }
     }
 
@@ -94,9 +98,24 @@ public partial class ProductsViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task AddProductAsync()
+    {
+        if (CreateAddProductDialog is null)
+        {
+            return;
+        }
+
+        AddProductView dialog = CreateAddProductDialog();
+        bool? ok = dialog.ShowDialog();
+        if (ok == true)
+        {
+            await RefreshAsync();
+        }
+    }
+
+    [RelayCommand]
     private async Task Refresh()
     {
         await RefreshAsync();
     }
 }
-

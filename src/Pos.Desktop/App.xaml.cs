@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Pos.Application.Catalog;
 using Pos.Application.Stock;
 using Pos.Desktop.ViewModels;
+using Pos.Desktop.Views;
 using Pos.Infrastructure.Catalog;
 using Pos.Infrastructure.Data;
 using Pos.Infrastructure.Logging;
@@ -46,10 +47,16 @@ public partial class App : System.Windows.Application
 
         services.AddSingleton<DashboardViewModel>();
         services.AddSingleton<ProductsViewModel>();
+        services.AddTransient<AddProductViewModel>();
+        services.AddTransient<AddProductView>();
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<MainWindow>();
 
         _services = services.BuildServiceProvider();
+
+        // Wire the Products VM's dialog factory to the DI container.
+        ProductsViewModel productsVm = _services.GetRequiredService<ProductsViewModel>();
+        productsVm.CreateAddProductDialog = () => _services.GetRequiredService<AddProductView>();
 
         MigrationRunner runner = _services.GetRequiredService<MigrationRunner>();
         MigrationResult migration = runner.Run();
@@ -62,9 +69,7 @@ public partial class App : System.Windows.Application
             Log.Error("Migration failed: {Error}", migration.Error);
             MessageBox.Show(
                 $"Database could not be prepared: {migration.Error}",
-                "MyPOS",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+                "MyPOS", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
             return;
         }

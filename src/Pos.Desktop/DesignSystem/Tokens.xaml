@@ -4,6 +4,8 @@
                     xmlns:conv="clr-namespace:Pos.Desktop.Converters">
 
     <conv:EqualsConverter x:Key="EqualsConverter" />
+    <conv:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter" />
+    <conv:InvertBoolConverter x:Key="InvertBoolConverter" />
 
     <!-- Colors -->
     <Color x:Key="ColorBackground">#F7F8FA</Color>
