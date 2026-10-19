@@ -4,6 +4,15 @@ Status values: TODO, IN_PROGRESS, DONE, BLOCKED-HUMAN, DEFERRED-approved.
 Evidence is mandatory for DONE: test name + passing run, or command + output, or file + behaviour.
 Never delete rows. New requirements get an X- prefix.
 
+## M2 Catalog and Stock
+
+| ID | Requirement | Status | Evidence |
+|---|---|---|---|
+| M2-01 | Product/Unit/Category/PriceTier entities + Dapper repositories | DONE | Pos.Infrastructure.Tests: ProductRepositoryTests 7/7; build green |
+| M2-02 | Search matches all tokens in any order, excludes archived | DONE | Search_MatchesAllTokensInAnyOrder, Search_ExcludesArchived pass |
+| M2-03 | Barcode lookup and duplicate check | DONE | Barcode_RoundTrips passes |
+| M2-04 | Search < 100 ms on 20,000 products | DONE | Measured 29 ms (cement), 43 ms (product 12) — 20k rows, LIKE-based |
+
 ## M1 Foundation
 
 | ID | Requirement | Status | Evidence |
