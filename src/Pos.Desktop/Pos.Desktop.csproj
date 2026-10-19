@@ -8,6 +8,7 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
   </ItemGroup>
 
   <PropertyGroup>

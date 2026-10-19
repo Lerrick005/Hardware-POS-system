@@ -1,6 +1,9 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+                    xmlns:conv="clr-namespace:Pos.Desktop.Converters">
+
+    <conv:EqualsConverter x:Key="EqualsConverter" />
 
     <!-- Colors -->
     <Color x:Key="ColorBackground">#F7F8FA</Color>

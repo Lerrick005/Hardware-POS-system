@@ -1,8 +1,13 @@
 ﻿using System.IO;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
+using Pos.Application.Catalog;
+using Pos.Application.Stock;
+using Pos.Desktop.ViewModels;
+using Pos.Infrastructure.Catalog;
 using Pos.Infrastructure.Data;
 using Pos.Infrastructure.Logging;
+using Pos.Infrastructure.Stock;
 using Serilog;
 
 namespace Pos.Desktop;
@@ -27,9 +32,23 @@ public partial class App : System.Windows.Application
         string dbPath = Path.Combine(dataFolder, "pos.db");
 
         ServiceCollection services = new();
+        services.AddLogging(b => b.AddSerilog(Log.Logger, dispose: false));
+
         services.AddSingleton(new DbConnectionFactory(dbPath));
         services.AddSingleton<BackupService>();
         services.AddSingleton<MigrationRunner>();
+
+        services.AddSingleton<IProductRepository, ProductRepository>();
+        services.AddSingleton<IUnitRepository, UnitRepository>();
+        services.AddSingleton<ICategoryRepository, CategoryRepository>();
+        services.AddSingleton<IPriceTierRepository, PriceTierRepository>();
+        services.AddSingleton<IReceiveGoods, ReceiveGoodsService>();
+
+        services.AddSingleton<DashboardViewModel>();
+        services.AddSingleton<ProductsViewModel>();
+        services.AddSingleton<MainWindowViewModel>();
+        services.AddSingleton<MainWindow>();
+
         _services = services.BuildServiceProvider();
 
         MigrationRunner runner = _services.GetRequiredService<MigrationRunner>();
@@ -50,7 +69,7 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        MainWindow window = new();
+        MainWindow window = _services.GetRequiredService<MainWindow>();
         MainWindow = window;
         window.Show();
     }
