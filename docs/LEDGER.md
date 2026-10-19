@@ -54,3 +54,12 @@ Never delete rows. New requirements get an X- prefix.
 | M2-10 | Duplicate-barcode check before insert | DONE | AddProductViewModel.SaveAsync pre-checks BarcodeExistsAsync |
 | M2-11 | Product + barcode insert is one transaction | DONE | InsertWithBarcodeAsync; ProductRepositoryTransactionTests 4/4 prove no orphan on barcode/uuid failure |
 | M2-12 | Edit-in-place later (update/archive via UI) | TODO | Repository methods exist; no UI yet |
+
+## M2 Receive Goods (list)
+
+| ID | Requirement | Status | Evidence |
+|---|---|---|---|
+| M2-13 | IReceiveGoodsQuery (list + detail) | DONE | Application interface + ReceiveGoodsQuery impl; build green |
+| M2-14 | Receive Goods list view (GRN, date, supplier, lines, total) | DONE | dotnet run confirmed; empty state renders; Stock nav routes correctly |
+| M2-15 | New receipt compose dialog | TODO | next slice |
+| M2-16 | Supplier directory + picker | TODO | schema has suppliers; no repo/UI yet |
