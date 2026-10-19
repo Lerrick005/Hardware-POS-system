@@ -14,4 +14,10 @@ public interface IProductRepository
     Task<IReadOnlyList<ProductBarcode>> ListBarcodesAsync(int productId, CancellationToken ct = default);
     Task AddBarcodeAsync(ProductBarcode barcode, CancellationToken ct = default);
     Task<bool> BarcodeExistsAsync(string barcode, CancellationToken ct = default);
+
+    /// <summary>
+    /// Inserts a product and (optionally) its primary barcode in one transaction.
+    /// If the barcode already exists, throws and the product is not created.
+    /// </summary>
+    Task<int> InsertWithBarcodeAsync(Product product, string? barcode, CancellationToken ct = default);
 }

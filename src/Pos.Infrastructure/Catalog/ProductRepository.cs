@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Microsoft.Data.Sqlite;
 using Pos.Application.Catalog;
 using Pos.Domain.Catalog;
 using Pos.Infrastructure.Data;
@@ -101,6 +102,38 @@ public sealed class ProductRepository : IProductRepository
                     $TrackStock, $ReorderLevelMilli, $IsActive, $ImportBatchId)
             RETURNING id", product, cancellationToken: ct));
         return (int)id;
+    }
+
+    public async Task<int> InsertWithBarcodeAsync(Product product, string? barcode, CancellationToken ct = default)
+    {
+        using SqliteConnection connection = _factory.CreateOpen();
+        using SqliteTransaction tx = connection.BeginTransaction();
+        try
+        {
+            long id = await connection.ExecuteScalarAsync<long>(new CommandDefinition(@"
+                INSERT INTO products(uuid, sku, name, category_id, base_unit_id, tax_class_id,
+                                     track_stock, reorder_level_milli, is_active, import_batch_id)
+                VALUES ($Uuid, $Sku, $Name, $CategoryId, $BaseUnitId, $TaxClassId,
+                        $TrackStock, $ReorderLevelMilli, $IsActive, $ImportBatchId)
+                RETURNING id",
+                product, tx, cancellationToken: ct));
+
+            if (!string.IsNullOrWhiteSpace(barcode))
+            {
+                await connection.ExecuteAsync(new CommandDefinition(
+                    "INSERT INTO product_barcodes(barcode, product_id, is_primary) VALUES ($Barcode, $ProductId, 1)",
+                    new { Barcode = barcode, ProductId = (int)id },
+                    tx, cancellationToken: ct));
+            }
+
+            tx.Commit();
+            return (int)id;
+        }
+        catch
+        {
+            tx.Rollback();
+            throw;
+        }
     }
 
     public async Task UpdateAsync(Product product, CancellationToken ct = default)

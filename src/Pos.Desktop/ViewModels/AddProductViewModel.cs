@@ -124,17 +124,9 @@ public partial class AddProductViewModel : ObservableObject
                 IsActive = true,
             };
 
-            int id = await _products.InsertAsync(product);
-
-            if (trimmedBarcode is not null)
-            {
-                await _products.AddBarcodeAsync(new ProductBarcode
-                {
-                    Barcode = trimmedBarcode,
-                    ProductId = id,
-                    IsPrimary = true,
-                });
-            }
+            // Product and its optional primary barcode are written in a single
+            // transaction: if the barcode insert fails, no orphan product remains.
+            int id = await _products.InsertWithBarcodeAsync(product, trimmedBarcode);
 
             Saved?.Invoke(this, id);
         }
