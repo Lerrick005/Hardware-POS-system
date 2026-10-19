@@ -44,9 +44,11 @@ public partial class App : System.Windows.Application
         services.AddSingleton<ICategoryRepository, CategoryRepository>();
         services.AddSingleton<IPriceTierRepository, PriceTierRepository>();
         services.AddSingleton<IReceiveGoods, ReceiveGoodsService>();
+        services.AddSingleton<IReceiveGoodsQuery, ReceiveGoodsQuery>();
 
         services.AddSingleton<DashboardViewModel>();
         services.AddSingleton<ProductsViewModel>();
+        services.AddSingleton<ReceiveGoodsViewModel>();
         services.AddTransient<AddProductViewModel>();
         services.AddTransient<AddProductView>();
         services.AddSingleton<MainWindowViewModel>();
@@ -54,7 +56,7 @@ public partial class App : System.Windows.Application
 
         _services = services.BuildServiceProvider();
 
-        // Wire the Products VM's dialog factory to the DI container.
+        // Wire dialog factories (VMs do not depend on the DI container directly).
         ProductsViewModel productsVm = _services.GetRequiredService<ProductsViewModel>();
         productsVm.CreateAddProductDialog = () => _services.GetRequiredService<AddProductView>();
 

@@ -36,3 +36,21 @@ Never delete rows. New requirements get an X- prefix.
 | M2-06 | ReceiveGoods use case: one transaction covering GRN + lines + PURCHASE movements + avg-cost update | DONE | ReceiveGoodsServiceTests 10/10 (happy, weighted avg, opening-zero, missing product rollback, duplicate line, empty, bad date, zero qty, negative cost, sequential GRNs) |
 | M2-07 | GRN numbering gap-free on success, rollback-safe | DONE | Execute_GrnNumbersAreSequentialAndGapFree_OnSuccess: GRN-000001/2/3 |
 | M2-08 | Dapper param-name must match $tokens exactly (lesson) | DONE | ADR-0009 |
+
+## M2 Add Product (UI)
+
+| ID | Requirement | Status | Evidence |
+|---|---|---|---|
+| M2-09 | Add Product dialog: name required, unit required, optional SKU/barcode/category/reorder | DONE | dotnet run --project src/Pos.Desktop; product "CEMENT" persisted; products query returns it |
+| M2-10 | Duplicate-barcode check before insert | DONE | AddProductViewModel.SaveAsync pre-checks BarcodeExistsAsync |
+| M2-11 | Product + barcode insert is one transaction | DONE | InsertWithBarcodeAsync; ProductRepositoryTransactionTests 4/4 prove no orphan on barcode/uuid failure |
+| M2-12 | Edit-in-place later (update/archive via UI) | TODO | Repository methods exist; no UI yet |
+
+## M2 Add Product (UI)
+
+| ID | Requirement | Status | Evidence |
+|---|---|---|---|
+| M2-09 | Add Product dialog: name required, unit required, optional SKU/barcode/category/reorder | DONE | dotnet run --project src/Pos.Desktop; product "CEMENT" persisted; products query returns it |
+| M2-10 | Duplicate-barcode check before insert | DONE | AddProductViewModel.SaveAsync pre-checks BarcodeExistsAsync |
+| M2-11 | Product + barcode insert is one transaction | DONE | InsertWithBarcodeAsync; ProductRepositoryTransactionTests 4/4 prove no orphan on barcode/uuid failure |
+| M2-12 | Edit-in-place later (update/archive via UI) | TODO | Repository methods exist; no UI yet |

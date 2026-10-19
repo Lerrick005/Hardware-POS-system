@@ -11,6 +11,10 @@
         <views:ProductsView />
     </DataTemplate>
 
+    <DataTemplate DataType="{x:Type vm:ReceiveGoodsViewModel}">
+        <views:ReceiveGoodsView />
+    </DataTemplate>
+
     <DataTemplate DataType="{x:Type vm:PlaceholderViewModel}">
         <views:PlaceholderView />
     </DataTemplate>
