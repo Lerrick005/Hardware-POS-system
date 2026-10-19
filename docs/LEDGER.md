@@ -16,5 +16,5 @@ Never delete rows. New requirements get an X- prefix.
 | M1-06 | Money + Quantity value objects (integer cents / milli) with unit tests | DONE | Pos.Domain.Tests: 20/20 passed (MoneyTests, QuantityTests) |
 | M1-07 | DbConnectionFactory applying PRAGMAs on every connection | DONE | Pos.Infrastructure.Tests: 4/4 passed (DbConnectionFactoryTests) |
 | M1-08 | Migration runner (forward-only, backup before migrate) + BackupService | DONE | Pos.Infrastructure.Tests: 9/9 passed (DbConnectionFactoryTests + MigrationRunnerTests) |
-| M1-09 | Serilog configuration to rolling file | TODO | |
-| M1-10 | App shell + DI composition root + navigation | TODO | |
+| M1-09 | Serilog configuration to rolling file (daily, 14 retained) | DONE | Log at C:\ProgramData\MyPOS\logs\pos-*.log shows "MyPOS starting" and "MyPOS exiting" |
+| M1-10 | App shell + DI composition root (migration on startup) | DONE | `dotnet run --project src/Pos.Desktop` boots; log shows Migration UpToDate 1.1->1.1 |
