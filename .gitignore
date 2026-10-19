@@ -18,3 +18,5 @@ logs/
 # Installer output
 installer/publish/
 installer/Output/
+
+test-detail.txt
