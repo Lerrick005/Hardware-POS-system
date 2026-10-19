@@ -1,4 +1,4 @@
-﻿# Architecture Decisions
+# Architecture Decisions
 
 Format: ADR-lite. Newest at top. Never delete; supersede instead.
 
@@ -50,3 +50,10 @@ Format: ADR-lite. Newest at top. Never delete; supersede instead.
 - Status: Proposed
 - Decision: Evaluate FTS5 virtual table on products(name, sku) with sync triggers vs. LIKE-based search. Must meet <100 ms on 20,000 products.
 - Consequences: To be resolved during M2 with measured evidence.
+
+## ADR-0009: Dapper parameter names must match $tokens exactly
+- Date: 2026-10-19
+- Status: Accepted (lesson)
+- Context: Anonymous-type property names must equal the `$name` tokens in SQL (case-sensitive as written). Projected declarators like `new { Id = line.ProductId }` do not satisfy `$ProductId`. Missing bindings throw at execution, not compile time.
+- Decision: Spell anon-object members to match every `$name` exactly; never reuse a property for a differently named token. Test coverage catches regressions because transaction tests execute the SQL for real.
+- Consequences: Anonymous objects are verbose but explicit; do not shorten at the cost of mismatch.

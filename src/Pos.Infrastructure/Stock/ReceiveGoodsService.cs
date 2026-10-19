@@ -30,10 +30,10 @@ public sealed partial class ReceiveGoodsService : IReceiveGoods
             long totalCents = 0;
             foreach (ReceiveGoodsLine line in request.Lines)
             {
-                Money lineTotal = new(Money.RoundHalfUpDiv(
+                long lineTotal = Money.RoundHalfUpDiv(
                     checked(line.UnitCostCents * line.QtyMilli),
-                    Quantity.MilliPerUnit));
-                totalCents = checked(totalCents + lineTotal.Cents);
+                    Quantity.MilliPerUnit);
+                totalCents = checked(totalCents + lineTotal);
             }
 
             long receiptId = await connection.ExecuteScalarAsync<long>(new CommandDefinition(@"
@@ -91,18 +91,15 @@ public sealed partial class ReceiveGoodsService : IReceiveGoods
         long newAvg = WeightedAverageCost.Calculate(
             product.StockMilli, product.AvgCostCents, line.QtyMilli, line.UnitCostCents);
 
-        long lineTotal = Money.RoundHalfUpDiv(
-            checked(line.UnitCostCents * line.QtyMilli), Quantity.MilliPerUnit);
-
         await connection.ExecuteAsync(new CommandDefinition(@"
             INSERT INTO goods_receipt_items(receipt_id, product_id, qty_milli, unit_cost_cents)
             VALUES ($ReceiptId, $ProductId, $QtyMilli, $UnitCostCents)",
             new
             {
                 ReceiptId = receiptId,
-                line.ProductId,
-                line.QtyMilli,
-                line.UnitCostCents,
+                ProductId = line.ProductId,
+                QtyMilli = line.QtyMilli,
+                UnitCostCents = line.UnitCostCents,
             },
             tx, cancellationToken: ct));
 
@@ -113,31 +110,28 @@ public sealed partial class ReceiveGoodsService : IReceiveGoods
                     'GRN', $ReceiptId, $UserId, $BusinessDate)",
             new
             {
-                line.ProductId,
-                line.QtyMilli,
-                line.UnitCostCents,
+                ProductId = line.ProductId,
+                QtyMilli = line.QtyMilli,
+                UnitCostCents = line.UnitCostCents,
                 ReceiptId = receiptId,
-                request.UserId,
-                request.BusinessDate,
+                UserId = request.UserId,
+                BusinessDate = request.BusinessDate,
             },
             tx, cancellationToken: ct));
 
-        // avg_cost and last_cost only. stock_milli is maintained by the movement trigger.
         await connection.ExecuteAsync(new CommandDefinition(@"
             UPDATE products
                SET avg_cost_cents  = $NewAvg,
-                   last_cost_cents = $UnitCostCents,
+                   last_cost_cents = $LastCost,
                    updated_at      = strftime('%Y-%m-%dT%H:%M:%SZ','now')
              WHERE id = $Id",
             new
             {
                 NewAvg = newAvg,
-                line.UnitCostCents,
-                line.ProductId,
+                LastCost = line.UnitCostCents,
+                Id = line.ProductId,
             },
             tx, cancellationToken: ct));
-
-        _ = lineTotal;
     }
 
     private static async Task<string> AllocateGrnNumberAsync(
