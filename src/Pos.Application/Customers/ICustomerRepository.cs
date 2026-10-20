@@ -2,14 +2,6 @@
 
 namespace Pos.Application.Customers;
 
-/// <summary>
-/// One row of the Customers list. Shaped for the grid — includes the joined
-/// price tier name and the current balance so the list can sort by either
-/// without N+1 queries.
-///
-/// A class with settable properties (not a positional record) so Dapper can
-/// materialize it directly from raw SQLite types (Int64 → int/bool, NULL → nullable).
-/// </summary>
 public sealed class CustomerListItem
 {
     public int Id { get; set; }
@@ -37,6 +29,19 @@ public interface ICustomerRepository
     Task<Customer?> GetByIdAsync(int id, CancellationToken ct = default);
 
     Task<int> InsertAsync(Customer customer, CancellationToken ct = default);
+
+    /// <summary>
+    /// Inserts a customer and, when <paramref name="openingBalanceCents"/> is
+    /// greater than zero, writes their opening balance (their old debt carried
+    /// from the notebook) in the same transaction. If either insert fails,
+    /// neither is persisted.
+    /// </summary>
+    Task<int> InsertWithOpeningBalanceAsync(
+        Customer customer,
+        long openingBalanceCents,
+        string businessDate,
+        int? userId = null,
+        CancellationToken ct = default);
 
     Task UpdateAsync(Customer customer, CancellationToken ct = default);
 

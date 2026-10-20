@@ -8,6 +8,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly DashboardViewModel _dashboard;
     private readonly ProductsViewModel _products;
     private readonly ReceiveGoodsViewModel _receiveGoods;
+    private readonly CustomersViewModel _customers;
 
     [ObservableProperty]
     private object? currentView;
@@ -24,11 +25,13 @@ public partial class MainWindowViewModel : ObservableObject
     public MainWindowViewModel(
         DashboardViewModel dashboard,
         ProductsViewModel products,
-        ReceiveGoodsViewModel receiveGoods)
+        ReceiveGoodsViewModel receiveGoods,
+        CustomersViewModel customers)
     {
         _dashboard = dashboard;
         _products = products;
         _receiveGoods = receiveGoods;
+        _customers = customers;
         ShowDashboard();
     }
 
@@ -59,10 +62,16 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ShowSell() => NavigateToPlaceholder("Sell", "The selling screen is being built.");
+    private async Task ShowCustomersAsync()
+    {
+        await _customers.RefreshAsync();
+        CurrentView = _customers;
+        CurrentTitle = "Customers";
+        SelectedNav = "Customers";
+    }
 
     [RelayCommand]
-    private void ShowCustomers() => NavigateToPlaceholder("Customers", "Credit customers and statements will appear here.");
+    private void ShowSell() => NavigateToPlaceholder("Sell", "The selling screen is being built.");
 
     [RelayCommand]
     private void ShowReports() => NavigateToPlaceholder("Reports", "Daily sales, profit and stock reports will appear here.");

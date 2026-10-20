@@ -2,10 +2,12 @@
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Pos.Application.Catalog;
+using Pos.Application.Customers;
 using Pos.Application.Stock;
 using Pos.Desktop.ViewModels;
 using Pos.Desktop.Views;
 using Pos.Infrastructure.Catalog;
+using Pos.Infrastructure.Customers;
 using Pos.Infrastructure.Data;
 using Pos.Infrastructure.Logging;
 using Pos.Infrastructure.Stock;
@@ -45,10 +47,13 @@ public partial class App : System.Windows.Application
         services.AddSingleton<IPriceTierRepository, PriceTierRepository>();
         services.AddSingleton<IReceiveGoods, ReceiveGoodsService>();
         services.AddSingleton<IReceiveGoodsQuery, ReceiveGoodsQuery>();
+        services.AddSingleton<ICustomerRepository, CustomerRepository>();
+        services.AddSingleton<ICustomerAccountService, CustomerAccountService>();
 
         services.AddSingleton<DashboardViewModel>();
         services.AddSingleton<ProductsViewModel>();
         services.AddSingleton<ReceiveGoodsViewModel>();
+        services.AddSingleton<CustomersViewModel>();
         services.AddTransient<AddProductViewModel>();
         services.AddTransient<AddProductView>();
         services.AddTransient<NewReceiptViewModel>();

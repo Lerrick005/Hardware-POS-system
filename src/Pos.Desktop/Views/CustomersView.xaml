@@ -1,0 +1,182 @@
+﻿<UserControl x:Class="Pos.Desktop.Views.CustomersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="32,28,32,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ===== Header ===== -->
+        <Grid Grid.Row="0" Margin="0,0,0,24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel>
+                <TextBlock Text="Customers" Style="{StaticResource Text.Display}" />
+                <TextBlock Text="Credit customers, balances and payments."
+                           Style="{StaticResource Text.Body}"
+                           Foreground="{StaticResource Brush.Text.Secondary}"
+                           Margin="0,4,0,0" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{StaticResource Button.Secondary}"
+                        Command="{Binding RefreshCommand}"
+                        Margin="0,0,8,0" ToolTip="Refresh">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{StaticResource Icon.Refresh}"
+                                   FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="14" VerticalAlignment="Center"
+                                   Margin="0,0,8,0" />
+                        <TextBlock Text="Refresh" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource Button.Primary}"
+                        ToolTip="Add a new customer"
+                        IsEnabled="False">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{StaticResource Icon.Add}"
+                                   FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="14" VerticalAlignment="Center"
+                                   Margin="0,0,8,0" />
+                        <TextBlock Text="Add customer" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- ===== Search bar + debtors toggle ===== -->
+        <Grid Grid.Row="1" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0"
+                    Background="{StaticResource Brush.Surface}"
+                    BorderBrush="{StaticResource Brush.Border.Default}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource Radius.Medium}"
+                    Height="36">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="{StaticResource Icon.Search}"
+                               FontFamily="{StaticResource Font.Icon}"
+                               FontSize="14"
+                               Foreground="{StaticResource Brush.Text.Tertiary}"
+                               VerticalAlignment="Center"
+                               Margin="12,0,0,0" />
+                    <TextBox Grid.Column="1"
+                             Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             Padding="8,0"
+                             FontSize="{StaticResource Font.Size.Body}"
+                             VerticalContentAlignment="Center" />
+                </Grid>
+            </Border>
+
+            <CheckBox Grid.Column="1"
+                      Content="Only with balance"
+                      IsChecked="{Binding OnlyDebtors}"
+                      VerticalAlignment="Center"
+                      Margin="16,0,0,0"
+                      FontSize="{StaticResource Font.Size.Body}" />
+        </Grid>
+
+        <!-- ===== Grid / empty state ===== -->
+        <Grid Grid.Row="2">
+            <Border Background="{StaticResource Brush.Surface}"
+                    BorderBrush="{StaticResource Brush.Border.Default}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource Radius.Large}">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding Customers.Count}" Value="0" />
+                                    <Condition Binding="{Binding IsBusy}" Value="False" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <DataGrid ItemsSource="{Binding Customers}"
+                          Style="{StaticResource DataGrid.Default}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
+                        <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="150" />
+                        <DataGridTextColumn Header="Price type" Binding="{Binding PriceTierName}" Width="120" />
+                        <DataGridTextColumn Header="Credit limit"
+                                            Binding="{Binding CreditLimitCents, StringFormat={}{0:N0}}"
+                                            Width="120"
+                                            CellStyle="{StaticResource DataGrid.NumericCell}"
+                                            HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                        <DataGridTextColumn Header="Balance"
+                                            Binding="{Binding BalanceCents, StringFormat={}{0:N0}}"
+                                            Width="120"
+                                            CellStyle="{StaticResource DataGrid.NumericCell}"
+                                            HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <Border Background="{StaticResource Brush.Surface}"
+                    BorderBrush="{StaticResource Brush.Border.Default}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource Radius.Large}">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding Customers.Count}" Value="0" />
+                                    <Condition Binding="{Binding IsBusy}" Value="False" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Visible" />
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                            MaxWidth="420" Margin="24">
+                    <TextBlock Text="{StaticResource Icon.People}"
+                               FontFamily="{StaticResource Font.Icon}"
+                               FontSize="56"
+                               Foreground="{StaticResource Brush.Text.Tertiary}"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="No customers yet"
+                               Style="{StaticResource Text.Title}"
+                               HorizontalAlignment="Center"
+                               Margin="0,16,0,0" />
+                    <TextBlock Text="Add customers who buy on credit. You will be able to track what each one owes."
+                               Style="{StaticResource Text.Body}"
+                               Foreground="{StaticResource Brush.Text.Secondary}"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               Margin="0,6,0,20" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ===== Footer ===== -->
+        <Grid Grid.Row="3" Margin="0,12,0,0">
+            <TextBlock Text="{Binding StatusText}"
+                       Style="{StaticResource Text.Caption}"
+                       VerticalAlignment="Center" />
+        </Grid>
+    </Grid>
+</UserControl>

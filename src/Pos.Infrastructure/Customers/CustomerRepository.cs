@@ -12,7 +12,6 @@ public sealed class CustomerRepository : ICustomerRepository
 
     public CustomerRepository(DbConnectionFactory factory) => _factory = factory;
 
-    // Balance subquery reused in every list query.
     private const string BalanceColumn =
         "COALESCE((SELECT SUM(amount_cents) FROM customer_ledger WHERE customer_id = c.id), 0)";
 
@@ -126,6 +125,75 @@ public sealed class CustomerRepository : ICustomerRepository
         return (int)id;
     }
 
+    public async Task<int> InsertWithOpeningBalanceAsync(
+        Customer customer,
+        long openingBalanceCents,
+        string businessDate,
+        int? userId = null,
+        CancellationToken ct = default)
+    {
+        if (openingBalanceCents < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(openingBalanceCents), "Opening balance cannot be negative.");
+        }
+
+        if (string.IsNullOrWhiteSpace(businessDate) ||
+            !System.Text.RegularExpressions.Regex.IsMatch(businessDate, "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))
+        {
+            throw new ArgumentException("businessDate must be YYYY-MM-DD.", nameof(businessDate));
+        }
+
+        using SqliteConnection connection = _factory.CreateOpen();
+        using SqliteTransaction tx = connection.BeginTransaction();
+        try
+        {
+            long id = await connection.ExecuteScalarAsync<long>(new CommandDefinition(@"
+                INSERT INTO customers(uuid, name, phone, email, kra_pin, price_tier_id,
+                                      credit_limit_cents, notes, is_active, import_batch_id)
+                VALUES ($Uuid, $Name, $Phone, $Email, $KraPin, $PriceTierId,
+                        $CreditLimitCents, $Notes, $IsActive, $ImportBatchId)
+                RETURNING id",
+                customer, tx, cancellationToken: ct));
+
+            if (openingBalanceCents > 0)
+            {
+                await connection.ExecuteAsync(new CommandDefinition(@"
+                    INSERT INTO customer_ledger(customer_id, entry_type, amount_cents,
+                                                notes, user_id, business_date)
+                    VALUES ($CustomerId, 'OPENING', $AmountCents,
+                            'Opening balance from notebook', $UserId, $BusinessDate)",
+                    new
+                    {
+                        CustomerId = (int)id,
+                        AmountCents = openingBalanceCents,
+                        UserId = userId,
+                        BusinessDate = businessDate,
+                    },
+                    tx, cancellationToken: ct));
+
+                await connection.ExecuteAsync(new CommandDefinition(@"
+                    INSERT INTO audit_log(user_id, action, entity_type, entity_id, new_value)
+                    VALUES ($UserId, 'CUSTOMER_OPENING_BALANCE', 'customer', $CustomerId, $Amount)",
+                    new
+                    {
+                        UserId = userId,
+                        CustomerId = (int)id,
+                        Amount = openingBalanceCents.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    },
+                    tx, cancellationToken: ct));
+            }
+
+            tx.Commit();
+            return (int)id;
+        }
+        catch
+        {
+            tx.Rollback();
+            throw;
+        }
+    }
+
     public async Task UpdateAsync(Customer customer, CancellationToken ct = default)
     {
         using var connection = _factory.CreateOpen();
@@ -186,11 +254,6 @@ public sealed class CustomerRepository : ICustomerRepository
         return rows.Select(r => r.ToEntry()).ToList();
     }
 
-    /// <summary>
-    /// Private row shape so the DB string (OPENING/CHARGE/PAYMENT/ADJUSTMENT)
-    /// can be mapped to the domain enum without changing either convention.
-    /// Dapper does not auto-convert "OPENING" to LedgerEntryType.Opening.
-    /// </summary>
     private sealed class LedgerRow
     {
         public int Id { get; set; }
