@@ -37,7 +37,7 @@ public sealed class ProductRepository : IProductRepository
     private const string ListItemFrom = @"
         FROM products p
         LEFT JOIN price_tiers pt ON pt.is_default = 1
-        LEFT JOIN product_prices pp ON pp.product_id = p.id AND pp.tier_id = pt.id";
+        LEFT JOIN product_prices pp ON pp.product_id = p.id AND pp.tier_id = pt.id AND pp.unit_id = p.base_unit_id";
 
     public async Task<IReadOnlyList<ProductListItem>> ListAsync(bool includeInactive = false, CancellationToken ct = default)
     {
@@ -656,3 +656,4 @@ public sealed class ProductRepository : IProductRepository
     }
 
 }
+

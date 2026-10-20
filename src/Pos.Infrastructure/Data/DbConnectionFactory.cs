@@ -44,7 +44,10 @@ public sealed class DbConnectionFactory
             "PRAGMA foreign_keys = ON;" +
             "PRAGMA journal_mode = WAL;" +
             "PRAGMA synchronous = FULL;" +
-            "PRAGMA busy_timeout = 5000;";
+            "PRAGMA busy_timeout = 5000;" +
+            "PRAGMA cache_size = -65536;" +   // 64 MB page cache — keeps 20k products hot
+            "PRAGMA temp_store = MEMORY;";
         command.ExecuteNonQuery();
     }
 }
+
