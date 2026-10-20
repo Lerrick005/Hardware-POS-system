@@ -135,7 +135,11 @@ public sealed partial class SellService : ISellService
 
             var resultLines = lines.Select(l => new SaleResultLine(
                 ProductName: l.ProductName,
+                UnitName: l.UnitName,
+                UnitSymbol: l.UnitSymbol,
                 QtyMilli: l.QtyMilli,
+                BaseQtyMilli: l.BaseQtyMilli,
+                FactorMilli: l.FactorMilli,
                 UnitPriceCents: l.UnitPriceCents,
                 LineTotalCents: l.LineTotalCents)).ToList();
 
@@ -185,7 +189,7 @@ public sealed partial class SellService : ISellService
             throw new SaleValidationException("A sale must have at least one payment.");
         }
 
-        HashSet<int> seenProducts = new();
+        HashSet<(int ProductId, int UnitId)> seenPairs = new();
         foreach (SaleLineRequest line in request.Lines)
         {
             if (line.QtyMilli <= 0)
@@ -200,10 +204,13 @@ public sealed partial class SellService : ISellService
             {
                 throw new SaleValidationException($"Discount cannot be negative (product {line.ProductId}).");
             }
-            if (!seenProducts.Add(line.ProductId))
+
+            // Same product can appear on multiple lines IF each uses a different
+            // selling unit — e.g. 3 pieces AND 1 kg of the same nails.
+            if (!seenPairs.Add((line.ProductId, line.UnitId)))
             {
                 throw new SaleValidationException(
-                    $"Duplicate product on sale: {line.ProductId}. Merge into one line.");
+                    $"Product {line.ProductId} already on sale with the same unit. Merge into one line.");
             }
         }
 
@@ -281,6 +288,15 @@ public sealed partial class SellService : ISellService
         public long AvgCostCents { get; set; }
         public long StockMilli { get; set; }
         public int TaxRateBp { get; set; }
+        public string UnitName { get; set; } = "";
+        public string UnitSymbol { get; set; } = "";
+
+        /// <summary>
+        /// Base-unit quantity per 1 of this selling unit, in thousandths.
+        /// Null if the unit is non-base AND not configured for this product.
+        /// </summary>
+        public long? FactorMilli { get; set; }
+
         public long? TierPriceCents { get; set; }
         public long? DefaultTierPriceCents { get; set; }
     }
@@ -292,45 +308,54 @@ public sealed partial class SellService : ISellService
         public long FactorMilli { get; set; }
     }
 
-    private async Task<Dictionary<int, ProductSnapshot>> LoadProductSnapshotsAsync(
+    private async Task<Dictionary<(int ProductId, int UnitId), ProductSnapshot>> LoadProductSnapshotsAsync(
         SqliteConnection c, SqliteTransaction tx, IReadOnlyList<SaleLineRequest> lines,
         int priceTierId, CancellationToken ct)
     {
-        int[] productIds = lines.Select(l => l.ProductId).Distinct().ToArray();
-        DynamicParameters p = new();
-        string[] placeholders = productIds.Select((_, i) =>
+        // Each (product, unit) pair is a distinct line. Load one snapshot per
+        // pair with the unit's factor and the price specific to (tier, unit).
+        var result = new Dictionary<(int, int), ProductSnapshot>();
+
+        foreach (SaleLineRequest line in lines)
         {
-            p.Add($"id{i}", productIds[i]);
-            return $"$id{i}";
-        }).ToArray();
-        p.Add("tierId", priceTierId);
+            ProductSnapshot? snap = await c.QuerySingleOrDefaultAsync<ProductSnapshot>(new CommandDefinition(@"
+                SELECT p.id AS Id,
+                       p.name AS Name,
+                       p.sku AS Sku,
+                       p.base_unit_id AS BaseUnitId,
+                       p.avg_cost_cents AS AvgCostCents,
+                       p.stock_milli AS StockMilli,
+                       COALESCE(tc.rate_bp, 0) AS TaxRateBp,
+                       u.name AS UnitName,
+                       u.symbol AS UnitSymbol,
+                       CASE WHEN p.base_unit_id = $unitId THEN 1000 ELSE pu.factor_milli END AS FactorMilli,
+                       pp.price_cents AS TierPriceCents,
+                       defpp.price_cents AS DefaultTierPriceCents
+                  FROM products p
+                  JOIN units u ON u.id = $unitId
+                  LEFT JOIN tax_classes tc ON tc.id = p.tax_class_id
+                  LEFT JOIN product_units pu ON pu.product_id = p.id AND pu.unit_id = $unitId
+                  LEFT JOIN product_prices pp ON pp.product_id = p.id
+                                             AND pp.unit_id = COALESCE(pu.unit_id, p.base_unit_id)
+                                             AND pp.tier_id = $tierId
+                  LEFT JOIN price_tiers def_pt ON def_pt.is_default = 1
+                  LEFT JOIN product_prices defpp ON defpp.product_id = p.id
+                                                AND defpp.unit_id = COALESCE(pu.unit_id, p.base_unit_id)
+                                                AND defpp.tier_id = def_pt.id
+                 WHERE p.id = $productId AND p.is_active = 1",
+                new { productId = line.ProductId, unitId = line.UnitId, tierId = priceTierId },
+                tx, cancellationToken: ct));
 
-        string sql = $@"
-            SELECT p.id AS Id, p.name AS Name, p.sku AS Sku,
-                   p.base_unit_id AS BaseUnitId, p.avg_cost_cents AS AvgCostCents,
-                   p.stock_milli AS StockMilli,
-                   COALESCE(tc.rate_bp, 0) AS TaxRateBp,
-                   pp.price_cents AS TierPriceCents,
-                   defpp.price_cents AS DefaultTierPriceCents
-              FROM products p
-              LEFT JOIN tax_classes tc ON tc.id = p.tax_class_id
-              LEFT JOIN product_prices pp ON pp.product_id = p.id AND pp.tier_id = $tierId
-              LEFT JOIN price_tiers def_pt ON def_pt.is_default = 1
-              LEFT JOIN product_prices defpp ON defpp.product_id = p.id AND defpp.tier_id = def_pt.id
-             WHERE p.id IN ({string.Join(",", placeholders)}) AND p.is_active = 1";
+            if (snap is null)
+            {
+                throw new SaleValidationException(
+                    $"Unknown or archived product id: {line.ProductId}.");
+            }
 
-        var rows = await c.QueryAsync<ProductSnapshot>(
-            new CommandDefinition(sql, p, tx, cancellationToken: ct));
-
-        Dictionary<int, ProductSnapshot> byId = rows.ToDictionary(r => r.Id);
-        if (byId.Count != productIds.Length)
-        {
-            int[] missing = productIds.Where(id => !byId.ContainsKey(id)).ToArray();
-            throw new SaleValidationException(
-                $"Unknown or archived product id(s): {string.Join(", ", missing)}.");
+            result[(line.ProductId, line.UnitId)] = snap;
         }
 
-        return byId;
+        return result;
     }
 
     private sealed class ComputedLine
@@ -339,8 +364,11 @@ public sealed partial class SellService : ISellService
         public string ProductName = "";
         public string? ProductSku;
         public int UnitId;
+        public string UnitName = "";
+        public string UnitSymbol = "";
         public long QtyMilli;
         public long BaseQtyMilli;
+        public long FactorMilli;
         public long UnitPriceCents;
         public long UnitCostCents;
         public long DiscountCents;
@@ -354,38 +382,41 @@ public sealed partial class SellService : ISellService
 
     private static List<ComputedLine> ComputeLines(
         IReadOnlyList<SaleLineRequest> requestLines,
-        Dictionary<int, ProductSnapshot> products,
+        Dictionary<(int ProductId, int UnitId), ProductSnapshot> products,
         bool pricesIncludeTax)
     {
         List<ComputedLine> result = new();
 
         foreach (SaleLineRequest lr in requestLines)
         {
-            ProductSnapshot snapshot = products[lr.ProductId];
+            ProductSnapshot snapshot = products[(lr.ProductId, lr.UnitId)];
 
             long qty = lr.QtyMilli;
 
-            if (lr.UnitId != snapshot.BaseUnitId)
+            // Unit factor: 1000 for base unit, actual factor for configured
+            // alternative unit, null if the caller requested a unit that isn't
+            // set up for this product.
+            if (snapshot.FactorMilli is null)
             {
-                // Unit conversion factor for a non-base selling unit is handled by the caller
-                // today; the UI computes base_qty for selling units. If the caller passes a
-                // non-base unit, it must also pass the factor via the UI, which multiplies
-                // qty into base. In future this method will query product_units. For v1 the
-                // UI always sends the base unit; anything else is rejected.
                 throw new SaleValidationException(
-                    $"Selling unit {lr.UnitId} differs from product's base unit. Multi-unit selling is not supported in v1.");
+                    $"Unit '{snapshot.UnitName}' is not configured for product '{snapshot.Name}'. Add it in the product's selling units first.");
             }
 
-            long baseQty = qty;
+            long factor = snapshot.FactorMilli.Value;
 
-            long tierPrice = lr.UnitPriceCentsOverride
+            // Base quantity: qty (in requested unit, in milli) × factor (in milli) / 1000.
+            // Example: 2 boxes (2000 milli) × 120000 factor / 1000 = 240000 milli = 240 pieces.
+            long baseQty = checked(qty * factor / Quantity.MilliPerUnit);
+
+            long unitPrice = lr.UnitPriceCentsOverride
                 ?? snapshot.TierPriceCents
                 ?? snapshot.DefaultTierPriceCents
-                ?? throw new SaleValidationException($"No price set for product '{snapshot.Name}'.");
+                ?? throw new SaleValidationException(
+                    $"No price set for '{snapshot.Name}' at unit '{snapshot.UnitName}'.");
 
             bool overridden = lr.UnitPriceCentsOverride is not null;
 
-            long gross = Money.RoundHalfUpDiv(checked(tierPrice * qty), Quantity.MilliPerUnit);
+            long gross = Money.RoundHalfUpDiv(checked(unitPrice * qty), Quantity.MilliPerUnit);
             long net = gross - lr.DiscountCents;
             if (net < 0)
             {
@@ -413,9 +444,12 @@ public sealed partial class SellService : ISellService
                 ProductName = snapshot.Name,
                 ProductSku = snapshot.Sku,
                 UnitId = lr.UnitId,
+                UnitName = snapshot.UnitName,
+                UnitSymbol = snapshot.UnitSymbol,
                 QtyMilli = qty,
                 BaseQtyMilli = baseQty,
-                UnitPriceCents = tierPrice,
+                FactorMilli = factor,
+                UnitPriceCents = unitPrice,
                 UnitCostCents = snapshot.AvgCostCents,
                 DiscountCents = lr.DiscountCents,
                 TaxRateBp = snapshot.TaxRateBp,
@@ -617,5 +651,6 @@ public sealed partial class SellService : ISellService
     [GeneratedRegex("^[0-9]{4}-[0-9]{2}-[0-9]{2}$")]
     private static partial Regex BusinessDateRegex();
 }
+
 
 

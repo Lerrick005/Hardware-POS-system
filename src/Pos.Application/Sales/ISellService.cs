@@ -36,9 +36,19 @@ public sealed record SaleRequest(
     int UserId,
     int? CashSessionId);
 
+/// <summary>
+/// One line on a completed sale, ready for the receipt. Includes both the
+/// requested selling unit (e.g. "Box") and the base-unit quantity that was
+/// deducted from stock, so the receipt can show
+/// "2 Box (= 240 pcs) @ 500/Box = 1,000" or "0.75 KG (= 18.75 pcs) @ 400/KG = 300".
+/// </summary>
 public sealed record SaleResultLine(
     string ProductName,
+    string UnitName,
+    string UnitSymbol,
     long QtyMilli,
+    long BaseQtyMilli,
+    long FactorMilli,
     long UnitPriceCents,
     long LineTotalCents);
 
@@ -78,4 +88,5 @@ public interface ISellService
     /// </summary>
     Task<SaleResult> CompleteSaleAsync(SaleRequest request, CancellationToken ct = default);
 }
+
 
