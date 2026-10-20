@@ -50,12 +50,17 @@ public sealed partial class SellService : ISellService
             }
             long change = paidTotal - totalCents;
 
+            long nonCreditPaid = 0;
             long creditTotal = 0;
             foreach (PaymentRequest p in request.Payments)
             {
                 if (p.Method == "CREDIT")
                 {
                     creditTotal = checked(creditTotal + p.AmountCents);
+                }
+                else
+                {
+                    nonCreditPaid = checked(nonCreditPaid + p.AmountCents);
                 }
             }
 
@@ -65,7 +70,29 @@ public sealed partial class SellService : ISellService
                 {
                     throw new SaleValidationException("Credit payment requires a customer.");
                 }
+
+                // Credit may only cover the shortfall. If cash/mpesa/etc already
+                // cover the total, no credit can be applied — that combination
+                // is contradictory (you cannot both overpay and be in debt).
+                if (nonCreditPaid > totalCents)
+                {
+                    throw new SaleValidationException(
+                        "Cannot use credit when non-credit payments already cover the total.");
+                }
+
+                long requiredCredit = totalCents - nonCreditPaid;
+                if (creditTotal != requiredCredit)
+                {
+                    throw new SaleValidationException(
+                        $"Credit amount ({Money.FromCents(creditTotal)}) must exactly equal the shortfall ({Money.FromCents(requiredCredit)}).");
+                }
+
                 await ValidateCreditLimitAsync(connection, tx, request.CustomerId.Value, creditTotal, ct);
+            }
+            else
+            {
+                // No credit — overpayment is allowed, change is returned.
+                // (change is already computed above as paidTotal - totalCents)
             }
 
             string receiptNumber = await AllocateReceiptNumberAsync(connection, tx, ct);
@@ -577,3 +604,4 @@ public sealed partial class SellService : ISellService
     [GeneratedRegex("^[0-9]{4}-[0-9]{2}-[0-9]{2}$")]
     private static partial Regex BusinessDateRegex();
 }
+
