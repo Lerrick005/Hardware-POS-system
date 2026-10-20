@@ -17,11 +17,15 @@ public partial class CartLineViewModel : ObservableObject
     public CartLineViewModel(
         ProductListItem product,
         IReadOnlyList<CartUnitOption> unitOptions,
-        CartUnitOption initialUnit)
+        CartUnitOption initialUnit,
+        string baseUnitName,
+        long availableStockMilli)
     {
         ProductId = product.Id;
         ProductName = product.Name;
         BaseUnitId = product.BaseUnitId;
+        BaseUnitName = baseUnitName;
+        AvailableStockMilli = availableStockMilli;
         this.unitOptions = unitOptions;
         selectedUnit = initialUnit;
 
@@ -31,6 +35,10 @@ public partial class CartLineViewModel : ObservableObject
     public int ProductId { get; }
     public string ProductName { get; }
     public int BaseUnitId { get; }
+    public string BaseUnitName { get; }
+
+    /// <summary>Stock snapshot at add-to-cart time. Not refreshed live.</summary>
+    public long AvailableStockMilli { get; }
 
     [ObservableProperty]
     private IReadOnlyList<CartUnitOption> unitOptions;
@@ -55,6 +63,22 @@ public partial class CartLineViewModel : ObservableObject
     public long BaseQtyMilli { get; private set; }
     public long DiscountCents { get; private set; }
     public long LineTotalCents { get; private set; }
+
+    /// <summary>True when requested base quantity exceeds available stock.</summary>
+    public bool IsStockShort => BaseQtyMilli > 0 && BaseQtyMilli > AvailableStockMilli;
+
+    /// <summary>Human-readable warning, empty when stock is sufficient.</summary>
+    public string StockWarningText
+    {
+        get
+        {
+            if (!IsStockShort) return "";
+            decimal need = BaseQtyMilli / 1000m;
+            decimal have = AvailableStockMilli / 1000m;
+            string haveText = have <= 0 ? "out of stock" : $"only {have:0.###} {BaseUnitName} available";
+            return $"Need {need:0.###} {BaseUnitName} — {haveText}";
+        }
+    }
 
     public bool IsValid => QtyMilli > 0 && string.IsNullOrEmpty(ValidationError);
 
@@ -94,6 +118,7 @@ public partial class CartLineViewModel : ObservableObject
             DiscountCents = 0;
             LineTotalCents = 0;
             LineTotalDisplay = "0.00";
+            NotifyStockProps();
             Changed?.Invoke(this, EventArgs.Empty);
             return;
         }
@@ -106,6 +131,7 @@ public partial class CartLineViewModel : ObservableObject
             DiscountCents = 0;
             LineTotalCents = 0;
             LineTotalDisplay = "0.00";
+            NotifyStockProps();
             Changed?.Invoke(this, EventArgs.Empty);
             return;
         }
@@ -118,6 +144,7 @@ public partial class CartLineViewModel : ObservableObject
             DiscountCents = 0;
             LineTotalCents = 0;
             LineTotalDisplay = "0.00";
+            NotifyStockProps();
             Changed?.Invoke(this, EventArgs.Empty);
             return;
         }
@@ -136,6 +163,7 @@ public partial class CartLineViewModel : ObservableObject
                 DiscountCents = 0;
                 LineTotalCents = 0;
                 LineTotalDisplay = "0.00";
+                NotifyStockProps();
                 Changed?.Invoke(this, EventArgs.Empty);
                 return;
             }
@@ -151,12 +179,20 @@ public partial class CartLineViewModel : ObservableObject
             ValidationError = "Discount exceeds price.";
             LineTotalCents = 0;
             LineTotalDisplay = "0.00";
+            NotifyStockProps();
             Changed?.Invoke(this, EventArgs.Empty);
             return;
         }
 
         LineTotalCents = net;
         LineTotalDisplay = new Money(net).ToString();
+        NotifyStockProps();
         Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void NotifyStockProps()
+    {
+        OnPropertyChanged(nameof(IsStockShort));
+        OnPropertyChanged(nameof(StockWarningText));
     }
 }

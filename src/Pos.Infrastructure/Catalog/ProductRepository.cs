@@ -28,6 +28,7 @@ public sealed class ProductRepository : IProductRepository
         p.sku                AS Sku,
         p.name               AS Name,
         p.base_unit_id       AS BaseUnitId,
+        u.name               AS BaseUnitName,
         p.stock_milli        AS StockMilli,
         p.avg_cost_cents     AS AvgCostCents,
         p.reorder_level_milli AS ReorderLevelMilli,
@@ -36,6 +37,7 @@ public sealed class ProductRepository : IProductRepository
 
     private const string ListItemFrom = @"
         FROM products p
+        LEFT JOIN units u ON u.id = p.base_unit_id
         LEFT JOIN price_tiers pt ON pt.is_default = 1
         LEFT JOIN product_prices pp ON pp.product_id = p.id AND pp.tier_id = pt.id AND pp.unit_id = p.base_unit_id";
 
@@ -656,4 +658,5 @@ public sealed class ProductRepository : IProductRepository
     }
 
 }
+
 

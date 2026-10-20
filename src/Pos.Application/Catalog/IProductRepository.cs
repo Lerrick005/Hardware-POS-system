@@ -10,11 +10,25 @@ public sealed class ProductListItem
     public string? Sku { get; set; }
     public string Name { get; set; } = "";
     public int BaseUnitId { get; set; }
+    public string BaseUnitName { get; set; } = "";
     public long StockMilli { get; set; }
     public long AvgCostCents { get; set; }
     public long ReorderLevelMilli { get; set; }
     public bool IsActive { get; set; }
     public long? RetailPriceCents { get; set; }
+
+    /// <summary>Stock rendered with unit name: "47 bags", "12.5 kg", "3 pieces".</summary>
+    public string StockDisplay =>
+        StockMilli == 0
+            ? $"0 {BaseUnitName}"
+            : $"{(StockMilli / 1000m).ToString("0.###")} {BaseUnitName}";
+
+    /// <summary>True when stock is at or below the reorder level and needs restocking.</summary>
+    public bool IsLowStock =>
+        IsActive && ReorderLevelMilli > 0 && StockMilli <= ReorderLevelMilli;
+
+    /// <summary>True when stock is zero or negative — cannot sell.</summary>
+    public bool IsOutOfStock => StockMilli <= 0;
 }
 
 /// <summary>One selling unit for a product, including the base unit row.</summary>
@@ -86,3 +100,4 @@ public interface IProductRepository
         IReadOnlyList<ProductUnitSave> alternativeUnits,
         CancellationToken ct = default);
 }
+

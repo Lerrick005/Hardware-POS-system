@@ -14,6 +14,19 @@ public partial class ReceiptLineViewModel : ObservableObject
     [ObservableProperty] private string lineTotalDisplay = "0.00";
     [ObservableProperty] private string validationError = "";
 
+    /// <summary>Stock before this delivery. Set at add-to-line time.</summary>
+    public long ProductCurrentStockMilli { get; init; }
+
+    public long NewStockMilli => ProductCurrentStockMilli + QtyMilli;
+
+    public string CurrentStockDisplay =>
+        Product is null ? ""
+        : $"{(ProductCurrentStockMilli / 1000m).ToString("0.###")} {Product.BaseUnitName}".Trim();
+
+    public string NewStockDisplay =>
+        Product is null ? ""
+        : $"{(NewStockMilli / 1000m).ToString("0.###")} {Product.BaseUnitName}".Trim();
+
     public event EventHandler? Changed;
 
     public long QtyMilli { get; private set; }
@@ -41,6 +54,7 @@ public partial class ReceiptLineViewModel : ObservableObject
             UnitCostCents = 0;
             LineTotalCents = 0;
             LineTotalDisplay = "0.00";
+            NotifyStockProps();
             Changed?.Invoke(this, EventArgs.Empty);
             return;
         }
@@ -52,7 +66,7 @@ public partial class ReceiptLineViewModel : ObservableObject
         }
         else if (!UnitAllowsDecimal && !qty.IsWhole)
         {
-            ValidationError = "This unit does not allow fractions — enter a whole number.";
+            ValidationError = "This product is sold in whole units only.";
             QtyMilli = 0;
         }
         else
@@ -64,11 +78,10 @@ public partial class ReceiptLineViewModel : ObservableObject
         {
             UnitCostCents = 0;
         }
-        else if (!decimal.TryParse(UnitCostText.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out decimal costShillings) ||
-                 costShillings < 0)
+        else if (!decimal.TryParse(UnitCostText.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out decimal costShillings) || costShillings < 0)
         {
             ValidationError = string.IsNullOrEmpty(ValidationError)
-                ? "Unit cost must be a non-negative amount (e.g. 650 or 2.50)."
+                ? "Cost must be a non-negative amount (e.g. 650 or 2.50)."
                 : ValidationError;
             UnitCostCents = 0;
         }
@@ -79,7 +92,14 @@ public partial class ReceiptLineViewModel : ObservableObject
 
         LineTotalCents = Money.RoundHalfUpDiv(checked(UnitCostCents * QtyMilli), Quantity.MilliPerUnit);
         LineTotalDisplay = new Money(LineTotalCents).ToString();
-
+        NotifyStockProps();
         Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void NotifyStockProps()
+    {
+        OnPropertyChanged(nameof(NewStockMilli));
+        OnPropertyChanged(nameof(CurrentStockDisplay));
+        OnPropertyChanged(nameof(NewStockDisplay));
     }
 }

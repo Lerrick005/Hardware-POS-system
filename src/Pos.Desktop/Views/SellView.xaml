@@ -9,9 +9,10 @@
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="340" />
+            <ColumnDefinition Width="360" />
         </Grid.ColumnDefinitions>
 
+        <!-- Header -->
         <Grid Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -32,6 +33,7 @@
                     VerticalAlignment="Center" />
         </Grid>
 
+        <!-- Left: search + cart -->
         <Grid Grid.Row="1" Grid.Column="0" Margin="0,0,16,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -39,6 +41,7 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
+            <!-- Search bar -->
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -92,17 +95,18 @@
                         Margin="8,0,0,0" />
             </Grid>
 
+            <!-- Search results -->
             <Border Grid.Row="1"
                     Background="{StaticResource Brush.Surface}"
                     BorderBrush="{StaticResource Brush.Border.Default}"
                     BorderThickness="1"
                     CornerRadius="{StaticResource Radius.Medium}"
-                    MaxHeight="180"
+                    MaxHeight="160"
                     Margin="0,0,0,12">
                 <ListBox ItemsSource="{Binding SearchResults}"
                          SelectedItem="{Binding PickerProduct}"
                          BorderThickness="0"
-                         MaxHeight="180">
+                         MaxHeight="160">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid Margin="8,4">
@@ -117,14 +121,16 @@
                                                VerticalAlignment="Center" />
                                 </StackPanel>
                                 <TextBlock Grid.Column="1"
-                                           Text="{Binding RetailPriceCents, Converter={StaticResource CentsToShillingsConverter}}"
-                                           Style="{StaticResource Text.Numeric}" />
+                                           Text="{Binding StockDisplay}"
+                                           Style="{StaticResource Text.Caption}"
+                                           VerticalAlignment="Center" />
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
             </Border>
 
+            <!-- Cart -->
             <Border Grid.Row="2"
                     Background="{StaticResource Brush.Surface}"
                     BorderBrush="{StaticResource Brush.Border.Default}"
@@ -132,16 +138,32 @@
                     CornerRadius="{StaticResource Radius.Large}">
                 <DataGrid ItemsSource="{Binding Lines}"
                           Style="{StaticResource DataGrid.Default}"
-                          RowHeight="52">
+                          RowHeight="58">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Product" Width="*">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding ProductName}"
-                                               Style="{StaticResource Text.Body}"
-                                               FontWeight="SemiBold"
-                                               VerticalAlignment="Center"
-                                               TextTrimming="CharacterEllipsis" />
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding ProductName}"
+                                                   Style="{StaticResource Text.Body}"
+                                                   FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <StackPanel Orientation="Horizontal"
+                                                    Visibility="{Binding IsStockShort, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                    Margin="0,2,0,0">
+                                            <TextBlock Text="{StaticResource Icon.Warning}"
+                                                       FontFamily="{StaticResource Font.Icon}"
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource Brush.Warning}"
+                                                       VerticalAlignment="Center"
+                                                       Margin="0,0,4,0" />
+                                            <TextBlock Text="{Binding StockWarningText}"
+                                                       Foreground="{StaticResource Brush.Warning}"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -195,6 +217,7 @@
             </Border>
         </Grid>
 
+        <!-- Right: customer + payment -->
         <Border Grid.Row="1" Grid.Column="1"
                 Background="{StaticResource Brush.Surface}"
                 BorderBrush="{StaticResource Brush.Border.Default}"
@@ -207,24 +230,20 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
+                <!-- Customer (single field now) -->
                 <StackPanel Grid.Row="0" Margin="0,0,0,12">
                     <TextBlock Text="Customer" Style="{StaticResource Text.Label}" />
                     <ComboBox ItemsSource="{Binding Customers}"
                               SelectedItem="{Binding SelectedCustomer}"
                               DisplayMemberPath="Name"
-                              Padding="8,6" Margin="0,4,0,8"
-                              FontSize="{StaticResource Font.Size.Body}" />
-                    <TextBlock Text="Price type" Style="{StaticResource Text.Label}" />
-                    <ComboBox ItemsSource="{Binding PriceTiers}"
-                              SelectedValue="{Binding SelectedPriceTierId}"
-                              SelectedValuePath="Id"
-                              DisplayMemberPath="Name"
                               Padding="8,6" Margin="0,4,0,0"
                               FontSize="{StaticResource Font.Size.Body}" />
                 </StackPanel>
 
+                <!-- Totals -->
                 <Border Grid.Row="1"
                         Background="{StaticResource Brush.Surface.Sunken}"
                         CornerRadius="{StaticResource Radius.Medium}"
@@ -236,7 +255,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Total" Style="{StaticResource Text.Body}"
+                            <TextBlock Grid.Column="0" Text="Total" Style="{StaticResource Text.Body}"
                                        Foreground="{StaticResource Brush.Text.Secondary}" />
                             <TextBlock Grid.Column="1" Text="{Binding TotalDisplay, StringFormat='{}{0} KES'}"
                                        Style="{StaticResource Text.NumericStrong}" />
@@ -246,7 +265,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Paid" Style="{StaticResource Text.Body}"
+                            <TextBlock Grid.Column="0" Text="Paid" Style="{StaticResource Text.Body}"
                                        Foreground="{StaticResource Brush.Text.Secondary}" />
                             <TextBlock Grid.Column="1" Text="{Binding PaidDisplay}"
                                        Style="{StaticResource Text.Numeric}" />
@@ -256,7 +275,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Change" Style="{StaticResource Text.Body}"
+                            <TextBlock Grid.Column="0" Text="Change" Style="{StaticResource Text.Body}"
                                        Foreground="{StaticResource Brush.Text.Secondary}" />
                             <TextBlock Grid.Column="1" Text="{Binding ChangeDisplay}"
                                        Style="{StaticResource Text.NumericStrong}"
@@ -265,6 +284,7 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Payments list -->
                 <Grid Grid.Row="2">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -275,20 +295,13 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="Payments" Style="{StaticResource Text.Label}" />
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Button Content="Exact"
-                                    Command="{Binding SetExactCashCommand}"
-                                    Style="{StaticResource Button.Ghost}"
-                                    Height="24" Padding="8,0"
-                                    FontSize="{StaticResource Font.Size.Caption}"
-                                    Margin="0,0,4,0" />
-                            <Button Content="+ Add"
-                                    Command="{Binding AddPaymentCommand}"
-                                    Style="{StaticResource Button.Ghost}"
-                                    Height="24" Padding="8,0"
-                                    FontSize="{StaticResource Font.Size.Caption}" />
-                        </StackPanel>
+                        <TextBlock Grid.Column="0" Text="Payments" Style="{StaticResource Text.Label}" />
+                        <Button Grid.Column="1"
+                                Content="+ Split payment"
+                                Command="{Binding AddPaymentCommand}"
+                                Style="{StaticResource Button.Ghost}"
+                                Height="24" Padding="8,0"
+                                FontSize="{StaticResource Font.Size.Caption}" />
                     </Grid>
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                         <ItemsControl ItemsSource="{Binding Payments}">
@@ -349,7 +362,43 @@
                     </ScrollViewer>
                 </Grid>
 
+                <!-- Quick tender buttons -->
                 <StackPanel Grid.Row="3" Margin="0,12,0,0">
+                    <TextBlock Text="Quick tender (KES)" Style="{StaticResource Text.Label}" Margin="0,0,0,6" />
+                    <UniformGrid Columns="3" Margin="0,0,0,6">
+                        <Button Content="100"
+                                Command="{Binding AddCashTenderCommand}"
+                                CommandParameter="100"
+                                Style="{StaticResource Button.Secondary}"
+                                Height="40" Margin="0,0,4,4" />
+                        <Button Content="200"
+                                Command="{Binding AddCashTenderCommand}"
+                                CommandParameter="200"
+                                Style="{StaticResource Button.Secondary}"
+                                Height="40" Margin="2,0,2,4" />
+                        <Button Content="500"
+                                Command="{Binding AddCashTenderCommand}"
+                                CommandParameter="500"
+                                Style="{StaticResource Button.Secondary}"
+                                Height="40" Margin="4,0,0,4" />
+                        <Button Content="1,000"
+                                Command="{Binding AddCashTenderCommand}"
+                                CommandParameter="1000"
+                                Style="{StaticResource Button.Secondary}"
+                                Height="40" Margin="0,0,4,0" />
+                        <Button Content="Clear"
+                                Command="{Binding ClearCashTenderCommand}"
+                                Style="{StaticResource Button.Ghost}"
+                                Height="40" Margin="2,0,2,0" />
+                        <Button Content="Exact"
+                                Command="{Binding SetExactCashCommand}"
+                                Style="{StaticResource Button.Secondary}"
+                                Height="40" Margin="4,0,0,0" />
+                    </UniformGrid>
+                </StackPanel>
+
+                <!-- Error + Complete -->
+                <StackPanel Grid.Row="4" Margin="0,8,0,0">
                     <Border Background="{StaticResource Brush.Danger.Subtle}"
                             BorderBrush="{StaticResource Brush.Danger}"
                             BorderThickness="1"
@@ -361,6 +410,19 @@
                                    Foreground="{StaticResource Brush.Danger}"
                                    TextWrapping="Wrap"
                                    FontSize="{StaticResource Font.Size.Body}" />
+                    </Border>
+                    <Border Background="{StaticResource Brush.Warning.Subtle}"
+                            BorderBrush="{StaticResource Brush.Warning}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource Radius.Medium}"
+                            Padding="10"
+                            Margin="0,0,0,8"
+                            Visibility="{Binding HasStockWarning, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="⚠ Some items don't have enough stock — check the warning in the cart."
+                                   Foreground="{StaticResource Brush.Warning}"
+                                   TextWrapping="Wrap"
+                                   FontSize="{StaticResource Font.Size.Caption}"
+                                   FontWeight="SemiBold" />
                     </Border>
                     <Button Content="Complete sale"
                             Command="{Binding CompleteSaleCommand}"
@@ -377,4 +439,3 @@
         </Grid>
     </Grid>
 </UserControl>
-

@@ -36,10 +36,22 @@ public sealed partial class ReceiveGoodsService : IReceiveGoods
                 totalCents = checked(totalCents + lineTotal);
             }
 
+            // Validate: paid cannot exceed total (schema has CHECK too, but
+            // we want a friendly message, not a SQL constraint error).
+            if (request.PaidCents < 0)
+            {
+                throw new ReceiveGoodsValidationException("Paid amount cannot be negative.");
+            }
+            if (request.PaidCents > totalCents)
+            {
+                throw new ReceiveGoodsValidationException(
+                    $"Paid amount ({new Pos.Domain.Money(request.PaidCents)}) cannot exceed the delivery total ({new Pos.Domain.Money(totalCents)}).");
+            }
+
             long receiptId = await connection.ExecuteScalarAsync<long>(new CommandDefinition(@"
                 INSERT INTO goods_receipts(grn_number, supplier_id, supplier_ref, total_cents, paid_cents,
                                            user_id, business_date)
-                VALUES ($GrnNumber, $SupplierId, $SupplierRef, $TotalCents, 0, $UserId, $BusinessDate)
+                VALUES ($GrnNumber, $SupplierId, $SupplierRef, $TotalCents, $PaidCents, $UserId, $BusinessDate)
                 RETURNING id",
                 new
                 {
@@ -47,6 +59,7 @@ public sealed partial class ReceiveGoodsService : IReceiveGoods
                     request.SupplierId,
                     request.SupplierRef,
                     TotalCents = totalCents,
+                    PaidCents = request.PaidCents,
                     request.UserId,
                     request.BusinessDate,
                 },
@@ -199,3 +212,4 @@ public sealed partial class ReceiveGoodsService : IReceiveGoods
         public long AvgCostCents { get; set; }
     }
 }
+

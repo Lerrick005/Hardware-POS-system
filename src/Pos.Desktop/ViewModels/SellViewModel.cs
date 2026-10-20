@@ -24,6 +24,7 @@ public partial class SellViewModel : ObservableObject
 
     private CancellationTokenSource? _searchCts;
     private bool _loaded;
+    private int _defaultTierId = 1;
 
     [ObservableProperty] private string searchTerm = "";
     [ObservableProperty] private ProductListItem? pickerProduct;
@@ -43,16 +44,14 @@ public partial class SellViewModel : ObservableObject
     [ObservableProperty] private string changeDisplay = "0.00";
 
     [ObservableProperty] private CustomerListItem? selectedCustomer;
-    [ObservableProperty] private int? selectedPriceTierId;
 
     public ObservableCollection<ProductListItem> SearchResults { get; } = new();
     public ObservableCollection<CartLineViewModel> Lines { get; } = new();
     public ObservableCollection<PaymentLineViewModel> Payments { get; } = new();
     public ObservableCollection<CustomerListItem> Customers { get; } = new();
 
-    public IReadOnlyList<PriceTierOption> PriceTiers { get; private set; } = Array.Empty<PriceTierOption>();
-
     public bool HasMultiplePayments => Payments.Count > 1;
+    public bool HasStockWarning => Lines.Any(l => l.IsStockShort);
 
     public Func<SaleResult, ReceiptView>? CreateReceiptDialog { get; set; }
 
@@ -81,11 +80,8 @@ public partial class SellViewModel : ObservableObject
         if (_loaded) return;
         _loaded = true;
 
-        IReadOnlyList<PriceTier> tierList = await _tiers.ListAsync(includeInactive: false);
-        PriceTiers = tierList.Select(t => new PriceTierOption(t.Id, t.Name)).ToList();
-
-        PriceTier defaultTier = tierList.FirstOrDefault(t => t.IsDefault) ?? tierList[0];
-        SelectedPriceTierId = defaultTier.Id;
+        PriceTier? defaultTier = await _tiers.GetDefaultAsync();
+        _defaultTierId = defaultTier?.Id ?? 1;
 
         IReadOnlyList<CustomerListItem> customerList = await _customers.ListAsync(includeInactive: false);
 
@@ -111,20 +107,6 @@ public partial class SellViewModel : ObservableObject
         _ = DebounceSearchAsync(value, token);
     }
 
-    partial void OnSelectedCustomerChanged(CustomerListItem? value)
-    {
-        if (value is not null && value.Id > 0 && value.PriceTierId is not null)
-        {
-            SelectedPriceTierId = value.PriceTierId;
-        }
-    }
-
-    partial void OnSelectedPriceTierIdChanged(int? value)
-    {
-        if (value is null) return;
-        _ = RepriceCartAsync(value.Value);
-    }
-
     private async Task DebounceSearchAsync(string term, CancellationToken ct)
     {
         try
@@ -146,57 +128,13 @@ public partial class SellViewModel : ObservableObject
             if (ct.IsCancellationRequested) return;
 
             SearchResults.Clear();
-            foreach (ProductListItem p in items)
-            {
-                SearchResults.Add(p);
-            }
+            foreach (ProductListItem p in items) SearchResults.Add(p);
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Product search failed for {Term}", term);
         }
-    }
-
-    private async Task RepriceCartAsync(int tierId)
-    {
-        // Rebuild every line's unit options at the new tier. Each unit has its
-        // own price per tier, so we can't just "update one price" — the whole
-        // picker needs the correct prices for Retail vs Wholesale vs Contractor.
-        foreach (CartLineViewModel line in Lines)
-        {
-            IReadOnlyList<ProductUnitInfo> unitInfos = await _products.ListProductUnitsAsync(line.ProductId);
-            IReadOnlyList<ProductPriceInfo> allPrices = await _products.ListAllPricesAsync(line.ProductId);
-
-            var newOptions = new List<CartUnitOption>();
-            foreach (ProductUnitInfo ui in unitInfos)
-            {
-                long? price = allPrices
-                    .FirstOrDefault(p => p.TierId == tierId && p.UnitId == ui.UnitId)?.PriceCents;
-
-                if (price is null) continue;   // this unit has no price at this tier
-
-                Unit? unitDetail = await _units.GetByIdAsync(ui.UnitId);
-                bool allowsDecimal = unitDetail?.AllowsDecimal ?? false;
-
-                newOptions.Add(new CartUnitOption(
-                    UnitId: ui.UnitId,
-                    UnitName: ui.UnitName,
-                    UnitSymbol: ui.UnitSymbol,
-                    FactorMilli: ui.FactorMilli,
-                    PriceCents: price.Value,
-                    AllowsDecimal: allowsDecimal));
-            }
-
-            if (newOptions.Count == 0)
-            {
-                ErrorMessage = $"'{line.ProductName}' has no prices at this price tier. Change the price type back or edit the product.";
-                return;
-            }
-
-            line.UpdateUnitOptions(newOptions);
-        }
-        Recalculate();
     }
 
     [RelayCommand]
@@ -221,28 +159,17 @@ public partial class SellViewModel : ObservableObject
             return;
         }
 
-        int tierId = SelectedPriceTierId ?? 1;
-
-        // Load all configured selling units for this product + all prices at this tier
+        // Build the available units for this product at the default (Retail) tier.
         IReadOnlyList<ProductUnitInfo> unitInfos = await _products.ListProductUnitsAsync(PickerProduct.Id);
         IReadOnlyList<ProductPriceInfo> allPrices = await _products.ListAllPricesAsync(PickerProduct.Id);
 
-        // Build a unit option per configured unit that has a price at this tier
         var unitOptions = new List<CartUnitOption>();
         foreach (ProductUnitInfo ui in unitInfos)
         {
             long? price = allPrices
-                .FirstOrDefault(p => p.TierId == tierId && p.UnitId == ui.UnitId)?.PriceCents;
+                .FirstOrDefault(p => p.TierId == _defaultTierId && p.UnitId == ui.UnitId)?.PriceCents;
 
-            // Fall back to default tier price if current tier has none
-            if (price is null)
-            {
-                int defaultTierId = PriceTiers.FirstOrDefault()?.Id ?? tierId;
-                price = allPrices
-                    .FirstOrDefault(p => p.TierId == defaultTierId && p.UnitId == ui.UnitId)?.PriceCents;
-            }
-
-            if (price is null) continue;  // this unit has no price set, skip it
+            if (price is null) continue;
 
             Unit? unitDetail = await _units.GetByIdAsync(ui.UnitId);
             bool allowsDecimal = unitDetail?.AllowsDecimal ?? false;
@@ -258,15 +185,13 @@ public partial class SellViewModel : ObservableObject
 
         if (unitOptions.Count == 0)
         {
-            ErrorMessage = $"'{PickerProduct.Name}' has no prices set at this price type. Edit the product first.";
+            ErrorMessage = $"'{PickerProduct.Name}' has no price set. Edit the product first.";
             return;
         }
 
-        // Default to the base unit
         CartUnitOption defaultUnit = unitOptions.FirstOrDefault(u => u.UnitId == PickerProduct.BaseUnitId)
                                      ?? unitOptions[0];
 
-        // Merge if a line exists for (same product, same unit). Otherwise add new.
         CartLineViewModel? existing = Lines.FirstOrDefault(l =>
             l.ProductId == PickerProduct.Id && l.UnitId == defaultUnit.UnitId);
 
@@ -276,7 +201,12 @@ public partial class SellViewModel : ObservableObject
         }
         else
         {
-            CartLineViewModel line = new(PickerProduct, unitOptions, defaultUnit);
+            CartLineViewModel line = new(
+                PickerProduct,
+                unitOptions,
+                defaultUnit,
+                PickerProduct.BaseUnitName,
+                PickerProduct.StockMilli);
             line.SetQuantityMilli(qty.Milli);
             line.Changed += OnLineChanged;
             Lines.Add(line);
@@ -323,6 +253,35 @@ public partial class SellViewModel : ObservableObject
         Payments[0].AmountText = (TotalCents / 100m).ToString("0.##", CultureInfo.InvariantCulture);
     }
 
+    [RelayCommand]
+    private void AddCashTender(string amountKes)
+    {
+        if (!decimal.TryParse(amountKes, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal kes) || kes <= 0)
+            return;
+
+        long cents = (long)(kes * 100m);
+
+        // Find the first CASH payment, or create one.
+        PaymentLineViewModel? cashLine = Payments.FirstOrDefault(p => p.MethodCode == "CASH");
+        if (cashLine is null)
+        {
+            cashLine = new PaymentLineViewModel { MethodCode = "CASH" };
+            cashLine.Changed += OnPaymentChanged;
+            Payments.Add(cashLine);
+        }
+
+        long newTotal = cashLine.AmountCents + cents;
+        cashLine.AmountText = (newTotal / 100m).ToString("0.##", CultureInfo.InvariantCulture);
+    }
+
+    [RelayCommand]
+    private void ClearCashTender()
+    {
+        PaymentLineViewModel? cashLine = Payments.FirstOrDefault(p => p.MethodCode == "CASH");
+        if (cashLine is null) return;
+        cashLine.AmountText = "";
+    }
+
     private void ResetPaymentsForCash()
     {
         foreach (PaymentLineViewModel p in Payments) p.Changed -= OnPaymentChanged;
@@ -359,6 +318,8 @@ public partial class SellViewModel : ObservableObject
         ChangeDisplay = new Pos.Domain.Money(ChangeCents).ToString();
 
         StatusText = Lines.Count == 1 ? "1 line" : $"{Lines.Count} lines";
+
+        OnPropertyChanged(nameof(HasStockWarning));
     }
 
     [RelayCommand]
@@ -375,6 +336,12 @@ public partial class SellViewModel : ObservableObject
         foreach (CartLineViewModel l in Lines)
         {
             if (!l.IsValid) { ErrorMessage = l.ValidationError; return; }
+        }
+
+        if (Lines.Any(l => l.IsStockShort))
+        {
+            ErrorMessage = "Some items don't have enough stock. Reduce the quantity or remove the line.";
+            return;
         }
 
         foreach (PaymentLineViewModel p in Payments)
@@ -420,7 +387,7 @@ public partial class SellViewModel : ObservableObject
 
             SaleRequest request = new(
                 CustomerId: customerId,
-                PriceTierId: SelectedPriceTierId,
+                PriceTierId: _defaultTierId,
                 BusinessDate: DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 Lines: lineReqs,
                 Payments: payReqs,
@@ -463,9 +430,4 @@ public partial class SellViewModel : ObservableObject
         ErrorMessage = "";
         Recalculate();
     }
-
-    public sealed record PriceTierOption(int Id, string Name);
 }
-
-
-

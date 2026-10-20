@@ -5,7 +5,14 @@ public sealed record ReceiveGoodsRequest(
     string? SupplierRef,
     string BusinessDate,
     IReadOnlyList<ReceiveGoodsLine> Lines,
-    int? UserId = null);
+    int? UserId = null,
+    /// <summary>
+    /// How much the shop paid for this delivery when it arrived.
+    /// 0 = everything on credit (rare for a hardware shop)
+    /// Equal to total = paid in full (the common case)
+    /// Between = partial payment (some cash now, rest later)
+    /// </summary>
+    long PaidCents = 0);
 
 public sealed record ReceiveGoodsLine(int ProductId, long QtyMilli, long UnitCostCents);
 
@@ -25,3 +32,4 @@ public sealed class ReceiveGoodsValidationException : Exception
 {
     public ReceiveGoodsValidationException(string message) : base(message) { }
 }
+
