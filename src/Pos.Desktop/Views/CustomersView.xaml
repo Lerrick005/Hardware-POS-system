@@ -37,8 +37,8 @@
                     </StackPanel>
                 </Button>
                 <Button Style="{StaticResource Button.Primary}"
-                        ToolTip="Add a new customer"
-                        IsEnabled="False">
+                        Command="{Binding AddCustomerCommand}"
+                        ToolTip="Add a new customer">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{StaticResource Icon.Add}"
                                    FontFamily="{StaticResource Font.Icon}"
@@ -168,6 +168,18 @@
                                TextAlignment="Center"
                                TextWrapping="Wrap"
                                Margin="0,6,0,20" />
+                    <Button Style="{StaticResource Button.Primary}"
+                            Command="{Binding AddCustomerCommand}"
+                            HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{StaticResource Icon.Add}"
+                                       FontFamily="{StaticResource Font.Icon}"
+                                       FontSize="14"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,8,0" />
+                            <TextBlock Text="Add your first customer" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Border>
         </Grid>

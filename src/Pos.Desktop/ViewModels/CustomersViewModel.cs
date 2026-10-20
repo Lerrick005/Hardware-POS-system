@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Pos.Application.Customers;
+using Pos.Desktop.Views;
 
 namespace Pos.Desktop.ViewModels;
 
@@ -25,6 +26,9 @@ public partial class CustomersViewModel : ObservableObject
     private bool onlyDebtors;
 
     public ObservableCollection<CustomerListItem> Customers { get; } = new();
+
+    /// <summary>Set by App composition so this VM does not depend on the DI container.</summary>
+    public Func<AddCustomerView>? CreateAddCustomerDialog { get; set; }
 
     public CustomersViewModel(ICustomerRepository repo, ILogger<CustomersViewModel> logger)
     {
@@ -118,6 +122,22 @@ public partial class CustomersViewModel : ObservableObject
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task AddCustomerAsync()
+    {
+        if (CreateAddCustomerDialog is null)
+        {
+            return;
+        }
+
+        AddCustomerView dialog = CreateAddCustomerDialog();
+        bool? ok = dialog.ShowDialog();
+        if (ok == true)
+        {
+            await RefreshAsync();
         }
     }
 

@@ -100,3 +100,14 @@ Format: ADR-lite. Newest at top. Never delete; supersede instead.
 - Context: Dapper needs a parameterless constructor + property setters (or a constructor whose parameter types exactly match the reader's types, which for SQLite means Int64 for all numerics). Positional records with `int`, `int?`, `bool` parameters fail with "A parameterless default constructor or one matching signature is required".
 - Decision: Any type used as the target of `QueryAsync<T>` / `QueryFirstOrDefaultAsync<T>` must be a **class** with settable properties. Positional records are fine for non-Dapper DTOs (business logic inputs/outputs). Value-equality records that need materialization should be converted to classes with `init` or `set` properties.
 - Consequences: Existing `CustomerListItem` converted. `GoodsReceiptSummary` and `GoodsReceiptDetailLine` flagged for conversion before their UI lands.
+
+## ADR-0012: Every entity is CRUD-complete before its page is "done"
+- Date: 2026-10-20
+- Status: Accepted
+- Context: User established that every page in the app must fully support CRUD (Create, Read, Update, Delete). No page is considered finished with only some operations. Delete means "archive" (soft, per ADR-0003 principle "archive never delete") shown in UI as "Remove from list" or similar shop-language per ADR-0010.
+- Decision: A page is done only when:
+    * Create — the primary "new" flow works end-to-end with validation and atomicity
+    * Read — the list, filters and details render correct data with empty/loading/error states
+    * Update — the edit flow exists with the same validation as create
+    * Delete — the "remove from list" flow exists with confirmation, is soft (archive), never hard-deletes
+- Consequences: Any page shipped without all four must be marked INCOMPLETE in the ledger with a follow-up item for each missing operation. The ledger becomes the CRUD contract, not a feature wishlist.

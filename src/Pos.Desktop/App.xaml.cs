@@ -58,6 +58,8 @@ public partial class App : System.Windows.Application
         services.AddTransient<AddProductView>();
         services.AddTransient<NewReceiptViewModel>();
         services.AddTransient<NewReceiptView>();
+        services.AddTransient<AddCustomerViewModel>();
+        services.AddTransient<AddCustomerView>();
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<MainWindow>();
 
@@ -72,6 +74,14 @@ public partial class App : System.Windows.Application
             NewReceiptView dialog = _services.GetRequiredService<NewReceiptView>();
             dialog.Owner = MainWindow;
             return dialog.ShowDialog() == true;
+        };
+
+        CustomersViewModel customersVm = _services.GetRequiredService<CustomersViewModel>();
+        customersVm.CreateAddCustomerDialog = () =>
+        {
+            AddCustomerView dialog = _services.GetRequiredService<AddCustomerView>();
+            dialog.Owner = MainWindow;
+            return dialog;
         };
 
         MigrationRunner runner = _services.GetRequiredService<MigrationRunner>();
