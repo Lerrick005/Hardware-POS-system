@@ -60,6 +60,8 @@ public partial class App : System.Windows.Application
         services.AddTransient<NewReceiptView>();
         services.AddTransient<AddCustomerViewModel>();
         services.AddTransient<AddCustomerView>();
+        services.AddTransient<RecordPaymentViewModel>();
+        services.AddTransient<RecordPaymentView>();
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<MainWindow>();
 
@@ -81,6 +83,14 @@ public partial class App : System.Windows.Application
         {
             AddCustomerView dialog = _services.GetRequiredService<AddCustomerView>();
             AddCustomerViewModel vm = (AddCustomerViewModel)dialog.DataContext;
+            vm.CustomerId = customerId;
+            dialog.Owner = MainWindow;
+            return dialog;
+        };
+        customersVm.CreateRecordPaymentDialog = (int customerId) =>
+        {
+            RecordPaymentView dialog = _services.GetRequiredService<RecordPaymentView>();
+            RecordPaymentViewModel vm = (RecordPaymentViewModel)dialog.DataContext;
             vm.CustomerId = customerId;
             dialog.Owner = MainWindow;
             return dialog;

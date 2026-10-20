@@ -28,6 +28,7 @@ public partial class CustomersViewModel : ObservableObject
     public ObservableCollection<CustomerListItem> Customers { get; } = new();
 
     public Func<int?, AddCustomerView>? CreateCustomerDialog { get; set; }
+    public Func<int, RecordPaymentView>? CreateRecordPaymentDialog { get; set; }
 
     public CustomersViewModel(ICustomerRepository repo, ILogger<CustomersViewModel> logger)
     {
@@ -155,6 +156,21 @@ public partial class CustomersViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task RecordPaymentAsync(CustomerListItem? item)
+    {
+        if (item is null || CreateRecordPaymentDialog is null)
+        {
+            return;
+        }
+
+        RecordPaymentView dialog = CreateRecordPaymentDialog(item.Id);
+        if (dialog.ShowDialog() == true)
+        {
+            await RefreshAsync();
+        }
+    }
+
+    [RelayCommand]
     private async Task ArchiveCustomerAsync(CustomerListItem? item)
     {
         if (item is null)
@@ -162,7 +178,6 @@ public partial class CustomersViewModel : ObservableObject
             return;
         }
 
-        // Refuse to remove a customer who still owes money.
         if (item.BalanceCents > 0)
         {
             ConfirmDialog.Create(
