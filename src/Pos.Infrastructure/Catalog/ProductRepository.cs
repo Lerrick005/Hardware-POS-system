@@ -338,5 +338,164 @@ public sealed class ProductRepository : IProductRepository
             DO UPDATE SET price_cents = excluded.price_cents",
             new { productId, tierId, unitId = baseUnitId.Value, priceCents }, cancellationToken: ct));
     }
+
+    // ============ Multi-unit prices ============
+
+    public async Task<long?> GetPriceForUnitAsync(int productId, int tierId, int unitId, CancellationToken ct = default)
+    {
+        using var connection = _factory.CreateOpen();
+        return await connection.ExecuteScalarAsync<long?>(new CommandDefinition(@"
+            SELECT price_cents FROM product_prices
+             WHERE product_id = $productId AND tier_id = $tierId AND unit_id = $unitId",
+            new { productId, tierId, unitId }, cancellationToken: ct));
+    }
+
+    public async Task UpsertPriceForUnitAsync(int productId, int tierId, int unitId, long priceCents, CancellationToken ct = default)
+    {
+        if (priceCents < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(priceCents), "Price cannot be negative.");
+        }
+
+        using var connection = _factory.CreateOpen();
+        await connection.ExecuteAsync(new CommandDefinition(@"
+            INSERT INTO product_prices(product_id, tier_id, unit_id, price_cents)
+            VALUES ($productId, $tierId, $unitId, $priceCents)
+            ON CONFLICT(product_id, tier_id, unit_id)
+            DO UPDATE SET price_cents = excluded.price_cents",
+            new { productId, tierId, unitId, priceCents }, cancellationToken: ct));
+    }
+
+    public async Task<IReadOnlyList<ProductPriceInfo>> ListAllPricesAsync(int productId, CancellationToken ct = default)
+    {
+        using var connection = _factory.CreateOpen();
+        var rows = await connection.QueryAsync<ProductPriceInfo>(new CommandDefinition(@"
+            SELECT pp.tier_id     AS TierId,
+                   pt.name        AS TierName,
+                   pp.unit_id     AS UnitId,
+                   u.name         AS UnitName,
+                   pp.price_cents AS PriceCents
+              FROM product_prices pp
+              JOIN price_tiers pt ON pt.id = pp.tier_id
+              JOIN units u ON u.id = pp.unit_id
+             WHERE pp.product_id = $productId
+             ORDER BY pt.name, u.name",
+            new { productId }, cancellationToken: ct));
+        return rows.AsList();
+    }
+
+    // ============ Selling units ============
+
+    public async Task<IReadOnlyList<ProductUnitInfo>> ListProductUnitsAsync(int productId, CancellationToken ct = default)
+    {
+        using var connection = _factory.CreateOpen();
+
+        // Base unit comes first (IsBase = true). Then every alternative unit
+        // from product_units with its factor. If the product doesn't exist,
+        // returns empty.
+        var rows = await connection.QueryAsync<ProductUnitInfo>(new CommandDefinition(@"
+            SELECT u.id           AS UnitId,
+                   u.name         AS UnitName,
+                   u.symbol       AS UnitSymbol,
+                   1000           AS FactorMilli,
+                   1              AS IsBase
+              FROM products p
+              JOIN units u ON u.id = p.base_unit_id
+             WHERE p.id = $productId
+
+            UNION ALL
+
+            SELECT u.id              AS UnitId,
+                   u.name            AS UnitName,
+                   u.symbol          AS UnitSymbol,
+                   pu.factor_milli   AS FactorMilli,
+                   0                 AS IsBase
+              FROM product_units pu
+              JOIN units u ON u.id = pu.unit_id
+             WHERE pu.product_id = $productId
+
+             ORDER BY IsBase DESC, UnitName COLLATE NOCASE",
+            new { productId }, cancellationToken: ct));
+
+        return rows.AsList();
+    }
+
+    public async Task<ProductUnitInfo?> GetProductUnitAsync(int productId, int unitId, CancellationToken ct = default)
+    {
+        using var connection = _factory.CreateOpen();
+
+        return await connection.QueryFirstOrDefaultAsync<ProductUnitInfo>(new CommandDefinition(@"
+            SELECT u.id           AS UnitId,
+                   u.name         AS UnitName,
+                   u.symbol       AS UnitSymbol,
+                   CASE WHEN u.id = p.base_unit_id THEN 1000 ELSE pu.factor_milli END AS FactorMilli,
+                   CASE WHEN u.id = p.base_unit_id THEN 1 ELSE 0 END AS IsBase
+              FROM products p
+              JOIN units u ON u.id = $unitId
+              LEFT JOIN product_units pu ON pu.product_id = p.id AND pu.unit_id = u.id
+             WHERE p.id = $productId
+               AND (u.id = p.base_unit_id OR pu.id IS NOT NULL)",
+            new { productId, unitId }, cancellationToken: ct));
+    }
+
+    public async Task SaveProductUnitAsync(int productId, int unitId, long factorMilli, CancellationToken ct = default)
+    {
+        if (factorMilli <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(factorMilli), "Factor must be greater than zero.");
+        }
+
+        using var connection = _factory.CreateOpen();
+
+        // Refuse to add a "unit" equal to the base unit — that's already
+        // implicitly available and would confuse the picker.
+        int? baseUnitId = await connection.ExecuteScalarAsync<int?>(new CommandDefinition(
+            "SELECT base_unit_id FROM products WHERE id = $productId",
+            new { productId }, cancellationToken: ct));
+
+        if (baseUnitId is null)
+        {
+            throw new InvalidOperationException($"Product {productId} not found.");
+        }
+
+        if (baseUnitId.Value == unitId)
+        {
+            throw new InvalidOperationException("Cannot add a selling unit that is the product's base unit.");
+        }
+
+        await connection.ExecuteAsync(new CommandDefinition(@"
+            INSERT INTO product_units(product_id, unit_id, factor_milli)
+            VALUES ($productId, $unitId, $factorMilli)
+            ON CONFLICT(product_id, unit_id)
+            DO UPDATE SET factor_milli = excluded.factor_milli",
+            new { productId, unitId, factorMilli }, cancellationToken: ct));
+    }
+
+    public async Task RemoveProductUnitAsync(int productId, int unitId, CancellationToken ct = default)
+    {
+        using var connection = _factory.CreateOpen();
+
+        // Also remove any prices for this (product, unit) combination.
+        // Without this, orphan price rows would linger and confuse reports.
+        using Microsoft.Data.Sqlite.SqliteTransaction tx = connection.BeginTransaction();
+        try
+        {
+            await connection.ExecuteAsync(new CommandDefinition(
+                "DELETE FROM product_prices WHERE product_id = $productId AND unit_id = $unitId",
+                new { productId, unitId }, tx, cancellationToken: ct));
+
+            await connection.ExecuteAsync(new CommandDefinition(
+                "DELETE FROM product_units WHERE product_id = $productId AND unit_id = $unitId",
+                new { productId, unitId }, tx, cancellationToken: ct));
+
+            tx.Commit();
+        }
+        catch
+        {
+            tx.Rollback();
+            throw;
+        }
+    }
 }
+
 
