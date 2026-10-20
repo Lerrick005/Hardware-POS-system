@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Pos.Application.Catalog;
 using Pos.Application.Stock;
 using Pos.Domain;
-using Pos.Domain.Catalog;
 
 namespace Pos.Desktop.ViewModels;
 
@@ -31,13 +30,13 @@ public partial class NewReceiptViewModel : ObservableObject
     private bool isSaving;
 
     [ObservableProperty]
-    private Product? pickerProduct;
+    private ProductListItem? pickerProduct;
 
     [ObservableProperty]
     private string pickerSearchTerm = "";
 
     public ObservableCollection<ReceiptLineViewModel> Lines { get; } = new();
-    public ObservableCollection<Product> PickerResults { get; } = new();
+    public ObservableCollection<ProductListItem> PickerResults { get; } = new();
 
     public event EventHandler<int>? Saved;
 
@@ -83,7 +82,7 @@ public partial class NewReceiptViewModel : ObservableObject
     {
         try
         {
-            IReadOnlyList<Product> items = string.IsNullOrWhiteSpace(term)
+            IReadOnlyList<ProductListItem> items = string.IsNullOrWhiteSpace(term)
                 ? await _products.ListAsync(includeInactive: false, ct)
                 : await _products.SearchAsync(term, limit: 50, ct);
 
@@ -93,7 +92,7 @@ public partial class NewReceiptViewModel : ObservableObject
             }
 
             PickerResults.Clear();
-            foreach (Product p in items)
+            foreach (ProductListItem p in items)
             {
                 PickerResults.Add(p);
             }
@@ -172,8 +171,6 @@ public partial class NewReceiptViewModel : ObservableObject
             return;
         }
 
-        // Validate every line. Duplicates are checked here so the user gets a
-        // friendly message, not the raw SQL exception.
         HashSet<int> seenProducts = new();
         foreach (ReceiptLineViewModel line in Lines)
         {

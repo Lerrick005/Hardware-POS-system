@@ -111,3 +111,13 @@ Format: ADR-lite. Newest at top. Never delete; supersede instead.
     * Update — the edit flow exists with the same validation as create
     * Delete — the "remove from list" flow exists with confirmation, is soft (archive), never hard-deletes
 - Consequences: Any page shipped without all four must be marked INCOMPLETE in the ledger with a follow-up item for each missing operation. The ledger becomes the CRUD contract, not a feature wishlist.
+
+## ADR-0013: No visible field ships without a working path
+- Date: 2026-10-20
+- Status: Accepted
+- Context: Products page showed a Category dropdown with no way to add categories. Field appeared functional but was a dead end. Client would question the whole app's integrity on seeing it.
+- Decision: Any visible input, button, dropdown, or list must have a complete path to use it. If the underlying feature is not yet built, the UI must either:
+    (a) hide the field entirely, or
+    (b) show an honest "not available yet" state with a clear reason.
+  An empty dropdown with no explanation is not acceptable.
+- Consequences: Every pending feature must be either finished, hidden, or explained before the page is shipped. The ledger's DEBT entries gate shipping — a page with open DEBT items does not pass CRUD+.

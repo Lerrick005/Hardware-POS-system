@@ -56,6 +56,8 @@ public partial class App : System.Windows.Application
         services.AddSingleton<CustomersViewModel>();
         services.AddTransient<AddProductViewModel>();
         services.AddTransient<AddProductView>();
+        services.AddTransient<CategoriesViewModel>();
+        services.AddTransient<CategoriesView>();
         services.AddTransient<NewReceiptViewModel>();
         services.AddTransient<NewReceiptView>();
         services.AddTransient<AddCustomerViewModel>();
@@ -70,7 +72,20 @@ public partial class App : System.Windows.Application
         _services = services.BuildServiceProvider();
 
         ProductsViewModel productsVm = _services.GetRequiredService<ProductsViewModel>();
-        productsVm.CreateAddProductDialog = () => _services.GetRequiredService<AddProductView>();
+        productsVm.CreateProductDialog = (int? productId) =>
+        {
+            AddProductView dialog = _services.GetRequiredService<AddProductView>();
+            AddProductViewModel vm = (AddProductViewModel)dialog.DataContext;
+            vm.ProductId = productId;
+            dialog.Owner = MainWindow;
+            return dialog;
+        };
+        productsVm.CreateCategoriesDialog = () =>
+        {
+            CategoriesView dialog = _services.GetRequiredService<CategoriesView>();
+            dialog.Owner = MainWindow;
+            return dialog;
+        };
 
         ReceiveGoodsViewModel receiveVm = _services.GetRequiredService<ReceiveGoodsViewModel>();
         receiveVm.CreateNewReceiptDialog = () =>

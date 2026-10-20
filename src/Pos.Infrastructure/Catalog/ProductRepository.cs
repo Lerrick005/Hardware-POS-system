@@ -12,27 +12,41 @@ public sealed class ProductRepository : IProductRepository
 
     public ProductRepository(DbConnectionFactory factory) => _factory = factory;
 
-    private const string SelectColumns = @"
-        id AS Id, uuid AS Uuid, sku AS Sku, name AS Name, category_id AS CategoryId,
-        base_unit_id AS BaseUnitId, tax_class_id AS TaxClassId, track_stock AS TrackStock,
-        stock_milli AS StockMilli, avg_cost_cents AS AvgCostCents, last_cost_cents AS LastCostCents,
-        reorder_level_milli AS ReorderLevelMilli, is_active AS IsActive, import_batch_id AS ImportBatchId,
-        created_at AS CreatedAt, updated_at AS UpdatedAt";
-
-    private const string SelectColumnsP = @"
+    // Column list for the full Product entity (used by GetById / GetByBarcode).
+    private const string ProductColumns = @"
         p.id AS Id, p.uuid AS Uuid, p.sku AS Sku, p.name AS Name, p.category_id AS CategoryId,
         p.base_unit_id AS BaseUnitId, p.tax_class_id AS TaxClassId, p.track_stock AS TrackStock,
         p.stock_milli AS StockMilli, p.avg_cost_cents AS AvgCostCents, p.last_cost_cents AS LastCostCents,
         p.reorder_level_milli AS ReorderLevelMilli, p.is_active AS IsActive, p.import_batch_id AS ImportBatchId,
         p.created_at AS CreatedAt, p.updated_at AS UpdatedAt";
 
-    public async Task<IReadOnlyList<Product>> ListAsync(bool includeInactive = false, CancellationToken ct = default)
+    // Column list for the list/search projection. Includes retail price via
+    // LEFT JOINs. is_default = 1 is unique-indexed, so at most one tier row joins.
+    private const string ListItemColumns = @"
+        p.id                 AS Id,
+        p.uuid               AS Uuid,
+        p.sku                AS Sku,
+        p.name               AS Name,
+        p.base_unit_id       AS BaseUnitId,
+        p.stock_milli        AS StockMilli,
+        p.avg_cost_cents     AS AvgCostCents,
+        p.reorder_level_milli AS ReorderLevelMilli,
+        p.is_active          AS IsActive,
+        pp.price_cents       AS RetailPriceCents";
+
+    private const string ListItemFrom = @"
+        FROM products p
+        LEFT JOIN price_tiers pt ON pt.is_default = 1
+        LEFT JOIN product_prices pp ON pp.product_id = p.id AND pp.tier_id = pt.id";
+
+    public async Task<IReadOnlyList<ProductListItem>> ListAsync(bool includeInactive = false, CancellationToken ct = default)
     {
         using var connection = _factory.CreateOpen();
-        string sql = $"SELECT {SelectColumns} FROM products" +
-                     (includeInactive ? "" : " WHERE is_active = 1") +
-                     " ORDER BY name COLLATE NOCASE";
-        var rows = await connection.QueryAsync<Product>(new CommandDefinition(sql, cancellationToken: ct));
+        string sql = $"SELECT {ListItemColumns} {ListItemFrom}" +
+                     (includeInactive ? "" : " WHERE p.is_active = 1") +
+                     " ORDER BY p.name COLLATE NOCASE";
+        var rows = await connection.QueryAsync<ProductListItem>(
+            new CommandDefinition(sql, cancellationToken: ct));
         return rows.AsList();
     }
 
@@ -40,7 +54,7 @@ public sealed class ProductRepository : IProductRepository
     {
         using var connection = _factory.CreateOpen();
         return await connection.QueryFirstOrDefaultAsync<Product>(new CommandDefinition(
-            $"SELECT {SelectColumns} FROM products WHERE id = $id",
+            $"SELECT {ProductColumns} FROM products p WHERE p.id = $id",
             new { id }, cancellationToken: ct));
     }
 
@@ -48,17 +62,17 @@ public sealed class ProductRepository : IProductRepository
     {
         using var connection = _factory.CreateOpen();
         return await connection.QueryFirstOrDefaultAsync<Product>(new CommandDefinition(
-            $"SELECT {SelectColumnsP} FROM products p " +
+            $"SELECT {ProductColumns} FROM products p " +
             "JOIN product_barcodes b ON b.product_id = p.id " +
             "WHERE b.barcode = $barcode",
             new { barcode }, cancellationToken: ct));
     }
 
-    public async Task<IReadOnlyList<Product>> SearchAsync(string term, int limit = 50, CancellationToken ct = default)
+    public async Task<IReadOnlyList<ProductListItem>> SearchAsync(string term, int limit = 50, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(term))
         {
-            return Array.Empty<Product>();
+            return Array.Empty<ProductListItem>();
         }
 
         string[] tokens = term
@@ -69,16 +83,17 @@ public sealed class ProductRepository : IProductRepository
 
         if (tokens.Length == 0)
         {
-            return Array.Empty<Product>();
+            return Array.Empty<ProductListItem>();
         }
 
         string[] clauses = tokens
-            .Select((_, i) => $"(lower(name) LIKE $t{i} OR lower(coalesce(sku,'')) LIKE $t{i})")
+            .Select((_, i) => $"(lower(p.name) LIKE $t{i} OR lower(coalesce(p.sku,'')) LIKE $t{i})")
             .ToArray();
 
-        string sql = $"SELECT {SelectColumns} FROM products WHERE is_active = 1 AND " +
+        string sql = $"SELECT {ListItemColumns} {ListItemFrom} " +
+                     "WHERE p.is_active = 1 AND " +
                      string.Join(" AND ", clauses) +
-                     " ORDER BY name COLLATE NOCASE LIMIT $limit";
+                     " ORDER BY p.name COLLATE NOCASE LIMIT $limit";
 
         DynamicParameters parameters = new();
         for (int i = 0; i < tokens.Length; i++)
@@ -88,7 +103,8 @@ public sealed class ProductRepository : IProductRepository
         parameters.Add("limit", limit);
 
         using var connection = _factory.CreateOpen();
-        var rows = await connection.QueryAsync<Product>(new CommandDefinition(sql, parameters, cancellationToken: ct));
+        var rows = await connection.QueryAsync<ProductListItem>(
+            new CommandDefinition(sql, parameters, cancellationToken: ct));
         return rows.AsList();
     }
 
@@ -128,6 +144,94 @@ public sealed class ProductRepository : IProductRepository
 
             tx.Commit();
             return (int)id;
+        }
+        catch
+        {
+            tx.Rollback();
+            throw;
+        }
+    }
+
+    public async Task<int> SaveProductWithPricesAsync(
+        Product product,
+        string? barcode,
+        IReadOnlyDictionary<int, long> pricesByTierId,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+        ArgumentNullException.ThrowIfNull(pricesByTierId);
+
+        foreach (var entry in pricesByTierId)
+        {
+            if (entry.Key <= 0)
+            {
+                throw new ArgumentException(
+                    $"Price tier id must be positive: {entry.Key}.", nameof(pricesByTierId));
+            }
+            if (entry.Value < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(pricesByTierId),
+                    $"Price for tier {entry.Key} is negative: {entry.Value} cents.");
+            }
+        }
+
+        using SqliteConnection connection = _factory.CreateOpen();
+        using SqliteTransaction tx = connection.BeginTransaction();
+        try
+        {
+            int productId;
+
+            if (product.Id == 0)
+            {
+                long newId = await connection.ExecuteScalarAsync<long>(new CommandDefinition(@"
+                    INSERT INTO products(uuid, sku, name, category_id, base_unit_id, tax_class_id,
+                                         track_stock, reorder_level_milli, is_active, import_batch_id)
+                    VALUES ($Uuid, $Sku, $Name, $CategoryId, $BaseUnitId, $TaxClassId,
+                            $TrackStock, $ReorderLevelMilli, $IsActive, $ImportBatchId)
+                    RETURNING id",
+                    product, tx, cancellationToken: ct));
+                productId = (int)newId;
+
+                if (!string.IsNullOrWhiteSpace(barcode))
+                {
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        "INSERT INTO product_barcodes(barcode, product_id, is_primary) VALUES ($Barcode, $ProductId, 1)",
+                        new { Barcode = barcode, ProductId = productId },
+                        tx, cancellationToken: ct));
+                }
+            }
+            else
+            {
+                productId = product.Id;
+                await connection.ExecuteAsync(new CommandDefinition(@"
+                    UPDATE products
+                       SET sku                 = $Sku,
+                           name                = $Name,
+                           category_id         = $CategoryId,
+                           base_unit_id        = $BaseUnitId,
+                           tax_class_id        = $TaxClassId,
+                           track_stock         = $TrackStock,
+                           reorder_level_milli = $ReorderLevelMilli,
+                           is_active           = $IsActive,
+                           updated_at          = strftime('%Y-%m-%dT%H:%M:%SZ','now')
+                     WHERE id = $Id",
+                    product, tx, cancellationToken: ct));
+            }
+
+            foreach (var (tierId, priceCents) in pricesByTierId)
+            {
+                await connection.ExecuteAsync(new CommandDefinition(@"
+                    INSERT INTO product_prices(product_id, tier_id, price_cents)
+                    VALUES ($productId, $tierId, $priceCents)
+                    ON CONFLICT(product_id, tier_id)
+                    DO UPDATE SET price_cents = excluded.price_cents",
+                    new { productId, tierId, priceCents },
+                    tx, cancellationToken: ct));
+            }
+
+            tx.Commit();
+            return productId;
         }
         catch
         {

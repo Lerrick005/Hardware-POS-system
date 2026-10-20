@@ -117,12 +117,12 @@
                         <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="140" />
                         <DataGridTextColumn Header="Price type" Binding="{Binding PriceTierName}" Width="110" />
                         <DataGridTextColumn Header="Credit limit"
-                                            Binding="{Binding CreditLimitCents, StringFormat={}{0:N0}}"
+                                            Binding="{Binding CreditLimitCents, Converter={StaticResource CentsToShillingsConverter}}"
                                             Width="110"
                                             CellStyle="{StaticResource DataGrid.NumericCell}"
                                             HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
                         <DataGridTextColumn Header="Balance"
-                                            Binding="{Binding BalanceCents, StringFormat={}{0:N0}}"
+                                            Binding="{Binding BalanceCents, Converter={StaticResource CentsToShillingsConverter}}"
                                             Width="110"
                                             CellStyle="{StaticResource DataGrid.NumericCell}"
                                             HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
@@ -221,3 +221,4 @@
         </Grid>
     </Grid>
 </UserControl>
+

@@ -1,14 +1,14 @@
 ﻿using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Pos.Application.Catalog;
 using Pos.Domain;
-using Pos.Domain.Catalog;
 
 namespace Pos.Desktop.ViewModels;
 
 public partial class ReceiptLineViewModel : ObservableObject
 {
     [ObservableProperty]
-    private Product? product;
+    private ProductListItem? product;
 
     /// <summary>Whole base units as typed (e.g. "10").</summary>
     [ObservableProperty]
@@ -26,7 +26,7 @@ public partial class ReceiptLineViewModel : ObservableObject
 
     public event EventHandler? Changed;
 
-    partial void OnProductChanged(Product? value) => Recalculate();
+    partial void OnProductChanged(ProductListItem? value) => Recalculate();
     partial void OnQtyTextChanged(string value) => Recalculate();
     partial void OnUnitCostTextChanged(string value) => Recalculate();
 
@@ -78,7 +78,6 @@ public partial class ReceiptLineViewModel : ObservableObject
         }
         else
         {
-            // Convert KES shillings to integer cents, round half up.
             UnitCostCents = (long)decimal.Round(costShillings * 100m, 0, MidpointRounding.AwayFromZero);
         }
 

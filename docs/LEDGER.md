@@ -79,3 +79,20 @@ Never delete rows. New requirements get an X- prefix.
 | M3-09 | ConfirmDialog reusable component | DONE | Used for archive guard + archive confirm; available to all future pages |
 | M3-10 | Statement view (running balance, printable) | TODO | last remaining Customers item |
 | M3-11 | Audit entity_type consistency (currently 'customer' vs 'customer_ledger') | TODO | fix in batch with Products audit cleanup |
+
+## M3 Customers (CRUD+ complete)
+
+| ID | Requirement | Status | Evidence |
+|---|---|---|---|
+| M3-12 | Customer statement with running balance | DONE | Mary's statement rendered 2 rows: OPENING +12,500 ? balance 12,500, PAYMENT -12,500 ? balance 0; verified in UI |
+| M3-13 | Print statement | TODO | Button disabled with honest tooltip; needs printer service |
+| M3-14 | Restore archived customer | TODO | Soft delete exists; restore UI does not; workaround is raw SQL (not acceptable for shop owner) |
+| M3-15 | Export statement to PDF / CSV | TODO | Needed for accountant/tax |
+
+## Debt — Category management
+
+| ID | Requirement | Status | Evidence |
+|---|---|---|---|
+| DEBT-CAT-01 | Seed standard hardware categories on first install (migration 002) | IN_PROGRESS | Seed pending owner approval of category names |
+| DEBT-CAT-02 | Category management dialog: add, rename, archive | TODO | Blocks populating Category field from UI; workaround is SQL |
+| DEBT-CAT-03 | Category filter on Products page | TODO | Requires DEBT-CAT-02 first |

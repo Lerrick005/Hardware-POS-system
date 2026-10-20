@@ -216,5 +216,9 @@
     <conv:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter" />
     <conv:InvertBoolConverter x:Key="InvertBoolConverter" />
     <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    <conv:MilliToUnitsConverter x:Key="MilliToUnitsConverter" />
+    <conv:CentsToShillingsConverter x:Key="CentsToShillingsConverter" />
 </ResourceDictionary>
+
+
 

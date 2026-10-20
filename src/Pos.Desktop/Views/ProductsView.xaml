@@ -36,6 +36,17 @@
                         <TextBlock Text="Refresh" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
+                <Button Style="{StaticResource Button.Secondary}"
+                        Command="{Binding ManageCategoriesCommand}"
+                        Margin="0,0,8,0" ToolTip="Manage product categories">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{StaticResource Icon.Filter}"
+                                   FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="14" VerticalAlignment="Center"
+                                   Margin="0,0,8,0" />
+                        <TextBlock Text="Categories" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
                 <Button Style="{StaticResource Button.Primary}"
                         Command="{Binding AddProductCommand}"
                         ToolTip="Add a new product">
@@ -80,9 +91,8 @@
             </Grid>
         </Border>
 
-        <!-- ===== Content: grid OR empty state ===== -->
+        <!-- ===== Grid / empty state ===== -->
         <Grid Grid.Row="2">
-            <!-- Populated list -->
             <Border Background="{StaticResource Brush.Surface}"
                     BorderBrush="{StaticResource Brush.Border.Default}"
                     BorderThickness="1"
@@ -104,24 +114,47 @@
                 <DataGrid ItemsSource="{Binding Products}"
                           Style="{StaticResource DataGrid.Default}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Code" Binding="{Binding Sku}" Width="130" />
+                        <DataGridTextColumn Header="Code" Binding="{Binding Sku}" Width="120" />
                         <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
                         <DataGridTextColumn Header="Stock"
-                                            Binding="{Binding Stock}"
+                                            Binding="{Binding StockMilli, Converter={StaticResource MilliToUnitsConverter}}"
+                                            Width="90"
+                                            CellStyle="{StaticResource DataGrid.NumericCell}"
+                                            HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                        <DataGridTextColumn Header="Cost price"
+                                            Binding="{Binding AvgCostCents, Converter={StaticResource CentsToShillingsConverter}}"
                                             Width="110"
                                             CellStyle="{StaticResource DataGrid.NumericCell}"
                                             HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
-                        <DataGridTextColumn Header="Avg cost"
-                                            Binding="{Binding AvgCost}"
+                        <DataGridTextColumn Header="Retail price"
+                                            Binding="{Binding RetailPriceCents, Converter={StaticResource CentsToShillingsConverter}}"
                                             Width="120"
                                             CellStyle="{StaticResource DataGrid.NumericCell}"
                                             HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
-                        <DataGridCheckBoxColumn Header="Active" Binding="{Binding IsActive}" Width="80" IsReadOnly="True" />
+                        <DataGridTemplateColumn Header="" Width="150">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button Content="Edit"
+                                                Command="{Binding DataContext.EditProductCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource Button.Ghost}"
+                                                Height="28" Padding="10,0"
+                                                Margin="0,0,4,0" />
+                                        <Button Content="Remove"
+                                                Command="{Binding DataContext.ArchiveProductCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource Button.Ghost}"
+                                                Height="28" Padding="10,0"
+                                                Foreground="{StaticResource Brush.Danger}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
 
-            <!-- Empty state -->
             <Border Background="{StaticResource Brush.Surface}"
                     BorderBrush="{StaticResource Brush.Border.Default}"
                     BorderThickness="1"
@@ -181,3 +214,5 @@
         </Grid>
     </Grid>
 </UserControl>
+
+

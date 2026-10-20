@@ -4,7 +4,6 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Pos.Application.Catalog;
 using Pos.Desktop.Views;
-using Pos.Domain.Catalog;
 
 namespace Pos.Desktop.ViewModels;
 
@@ -23,10 +22,13 @@ public partial class ProductsViewModel : ObservableObject
     [ObservableProperty]
     private bool isBusy;
 
-    public ObservableCollection<Product> Products { get; } = new();
+    public ObservableCollection<ProductListItem> Products { get; } = new();
 
-    /// <summary>Set by App composition so this VM does not depend on the DI container.</summary>
-    public Func<AddProductView>? CreateAddProductDialog { get; set; }
+    /// <summary>Set by App composition. Null parameter = create, id = edit.</summary>
+    public Func<int?, AddProductView>? CreateProductDialog { get; set; }
+
+    /// <summary>Set by App composition. Opens the categories management dialog.</summary>
+    public Func<CategoriesView>? CreateCategoriesDialog { get; set; }
 
     public ProductsViewModel(IProductRepository repo, ILogger<ProductsViewModel> logger)
     {
@@ -65,7 +67,7 @@ public partial class ProductsViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            IReadOnlyList<Product> items = string.IsNullOrWhiteSpace(term)
+            IReadOnlyList<ProductListItem> items = string.IsNullOrWhiteSpace(term)
                 ? await _repo.ListAsync(includeInactive: false, ct)
                 : await _repo.SearchAsync(term, limit: 500, ct);
 
@@ -75,7 +77,7 @@ public partial class ProductsViewModel : ObservableObject
             }
 
             Products.Clear();
-            foreach (Product p in items)
+            foreach (ProductListItem p in items)
             {
                 Products.Add(p);
             }
@@ -100,17 +102,78 @@ public partial class ProductsViewModel : ObservableObject
     [RelayCommand]
     private async Task AddProductAsync()
     {
-        if (CreateAddProductDialog is null)
+        if (CreateProductDialog is null)
         {
             return;
         }
 
-        AddProductView dialog = CreateAddProductDialog();
-        bool? ok = dialog.ShowDialog();
-        if (ok == true)
+        AddProductView dialog = CreateProductDialog(null);
+        if (dialog.ShowDialog() == true)
         {
             await RefreshAsync();
         }
+    }
+
+    [RelayCommand]
+    private async Task EditProductAsync(ProductListItem? item)
+    {
+        if (item is null || CreateProductDialog is null)
+        {
+            return;
+        }
+
+        AddProductView dialog = CreateProductDialog(item.Id);
+        if (dialog.ShowDialog() == true)
+        {
+            await RefreshAsync();
+        }
+    }
+
+    [RelayCommand]
+    private async Task ArchiveProductAsync(ProductListItem? item)
+    {
+        if (item is null)
+        {
+            return;
+        }
+
+        string stockNote = item.StockMilli > 0
+            ? $" This product still has {new Pos.Domain.Quantity(item.StockMilli)} units in stock."
+            : "";
+
+        ConfirmDialog dlg = ConfirmDialog.CreateDanger(
+            "Remove this product?",
+            $"{item.Name} will no longer appear in the list.{stockNote} " +
+            "Stock history is kept and can be restored later.",
+            confirmLabel: "Remove product");
+
+        if (dlg.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            await _repo.ArchiveAsync(item.Id);
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Archive product {Id} failed", item.Id);
+            StatusText = $"Could not remove product: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void ManageCategories()
+    {
+        if (CreateCategoriesDialog is null)
+        {
+            return;
+        }
+
+        CategoriesView dialog = CreateCategoriesDialog();
+        dialog.ShowDialog();
     }
 
     [RelayCommand]

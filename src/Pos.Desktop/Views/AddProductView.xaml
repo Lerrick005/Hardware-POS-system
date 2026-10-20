@@ -1,71 +1,193 @@
 ﻿<Window x:Class="Pos.Desktop.Views.AddProductView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Add product" Height="560" Width="520"
+        Title="{Binding WindowTitle}" Height="620" Width="560"
+        MinHeight="520" MinWidth="480"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize"
+        ResizeMode="CanResize"
         Background="{StaticResource BackgroundBrush}"
         FontFamily="Segoe UI">
-    <StackPanel Margin="24">
-        <TextBlock Text="Add a new product" Style="{StaticResource TitleText}" />
-        <TextBlock Text="Essentials only. Prices and barcodes can be added later." Style="{StaticResource CaptionText}" Margin="0,4,0,20" />
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
-        <TextBlock Text="Name *" Style="{StaticResource CaptionText}" />
-        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Padding="10,8" Margin="0,4,0,12"
-                 Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" />
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="{Binding WindowTitle}" Style="{StaticResource Text.Title}" />
+            <TextBlock Text="Essentials first. Prices are optional but needed to sell."
+                       Style="{StaticResource Text.Caption}" Margin="0,2,0,0" TextWrapping="Wrap" />
+        </StackPanel>
 
-        <Grid Margin="0,0,0,12">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0">
-                <TextBlock Text="SKU (optional)" Style="{StaticResource CaptionText}" />
-                <TextBox Text="{Binding Sku, UpdateSourceTrigger=PropertyChanged}" Padding="10,8" Margin="0,4,0,0"
-                         Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" />
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="Name *" Style="{StaticResource Text.Label}" />
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                         Padding="8,6" Margin="0,4,0,12"
+                         Background="{StaticResource Brush.Surface}"
+                         BorderBrush="{StaticResource Brush.Border.Default}"
+                         BorderThickness="1"
+                         FontSize="{StaticResource Font.Size.Body}" />
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Code (optional)" Style="{StaticResource Text.Label}" />
+                        <TextBox Text="{Binding Sku, UpdateSourceTrigger=PropertyChanged}"
+                                 Padding="8,6" Margin="0,4,0,0"
+                                 Background="{StaticResource Brush.Surface}"
+                                 BorderBrush="{StaticResource Brush.Border.Default}"
+                                 BorderThickness="1"
+                                 FontSize="{StaticResource Font.Size.Body}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Sold by *" Style="{StaticResource Text.Label}" />
+                        <ComboBox ItemsSource="{Binding Units}"
+                                  SelectedItem="{Binding SelectedUnit}"
+                                  DisplayMemberPath="Name"
+                                  Padding="8,6" Margin="0,4,0,0"
+                                  FontSize="{StaticResource Font.Size.Body}" />
+                    </StackPanel>
+                </Grid>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Category (optional)" Style="{StaticResource Text.Label}" />
+                        <ComboBox ItemsSource="{Binding Categories}"
+                                  SelectedItem="{Binding SelectedCategory}"
+                                  DisplayMemberPath="Name"
+                                  Padding="8,6" Margin="0,4,0,0"
+                                  FontSize="{StaticResource Font.Size.Body}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Low stock alert (units)" Style="{StaticResource Text.Label}" />
+                        <TextBox Text="{Binding ReorderLevel, UpdateSourceTrigger=PropertyChanged}"
+                                 Padding="8,6" Margin="0,4,0,0"
+                                 Background="{StaticResource Brush.Surface}"
+                                 BorderBrush="{StaticResource Brush.Border.Default}"
+                                 BorderThickness="1"
+                                 FontSize="{StaticResource Font.Size.Body}" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- Barcode: only in create mode -->
+                <StackPanel Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}">
+                    <TextBlock Text="Barcode (optional)" Style="{StaticResource Text.Label}" />
+                    <TextBox Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="8,6" Margin="0,4,0,12"
+                             Background="{StaticResource Brush.Surface}"
+                             BorderBrush="{StaticResource Brush.Border.Default}"
+                             BorderThickness="1"
+                             FontSize="{StaticResource Font.Size.Body}" />
+                </StackPanel>
+
+                <!-- Existing barcode: only in edit mode (read-only display) -->
+                <StackPanel Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="Barcode" Style="{StaticResource Text.Label}" />
+                    <TextBox Text="{Binding ExistingBarcode}"
+                             IsReadOnly="True"
+                             Padding="8,6" Margin="0,4,0,12"
+                             Background="{StaticResource Brush.Surface.Sunken}"
+                             Foreground="{StaticResource Brush.Text.Secondary}"
+                             BorderBrush="{StaticResource Brush.Border.Default}"
+                             BorderThickness="1"
+                             FontSize="{StaticResource Font.Size.Body}" />
+                </StackPanel>
+
+                <Border Background="{StaticResource Brush.Surface.Sunken}"
+                        CornerRadius="{StaticResource Radius.Medium}"
+                        Padding="12"
+                        Margin="0,4,0,12">
+                    <StackPanel>
+                        <TextBlock Text="Prices (KES)"
+                                   Style="{StaticResource Text.Label}"
+                                   Margin="0,0,0,8" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Retail" Style="{StaticResource Text.Caption}" Margin="0,0,0,2" />
+                                <TextBox Text="{Binding RetailPriceText, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="8,6"
+                                         Background="{StaticResource Brush.Surface}"
+                                         BorderBrush="{StaticResource Brush.Border.Default}"
+                                         BorderThickness="1"
+                                         FontSize="{StaticResource Font.Size.Body}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Wholesale" Style="{StaticResource Text.Caption}" Margin="0,0,0,2" />
+                                <TextBox Text="{Binding WholesalePriceText, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="8,6"
+                                         Background="{StaticResource Brush.Surface}"
+                                         BorderBrush="{StaticResource Brush.Border.Default}"
+                                         BorderThickness="1"
+                                         FontSize="{StaticResource Font.Size.Body}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="Contractor" Style="{StaticResource Text.Caption}" Margin="0,0,0,2" />
+                                <TextBox Text="{Binding ContractorPriceText, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="8,6"
+                                         Background="{StaticResource Brush.Surface}"
+                                         BorderBrush="{StaticResource Brush.Border.Default}"
+                                         BorderThickness="1"
+                                         FontSize="{StaticResource Font.Size.Body}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="Leave blank for tiers the shop does not use. Retail is the normal counter price."
+                                   Style="{StaticResource Text.Caption}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,6,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{StaticResource Brush.Danger.Subtle}"
+                        BorderBrush="{StaticResource Brush.Danger}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Radius.Medium}"
+                        Padding="10"
+                        Margin="0,4,0,0"
+                        Visibility="{Binding ErrorMessage, Converter={StaticResource EmptyStringToCollapsedConverter}}">
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               Foreground="{StaticResource Brush.Danger}"
+                               TextWrapping="Wrap"
+                               FontSize="{StaticResource Font.Size.Body}" />
+                </Border>
             </StackPanel>
-            <StackPanel Grid.Column="2">
-                <TextBlock Text="Barcode (optional)" Style="{StaticResource CaptionText}" />
-                <TextBox Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}" Padding="10,8" Margin="0,4,0,0"
-                         Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" />
-            </StackPanel>
-        </Grid>
+        </ScrollViewer>
 
-        <Grid Margin="0,0,0,12">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0">
-                <TextBlock Text="Base unit *" Style="{StaticResource CaptionText}" />
-                <ComboBox ItemsSource="{Binding Units}" SelectedItem="{Binding SelectedUnit}"
-                          DisplayMemberPath="Name" Padding="10,8" Margin="0,4,0,0" />
-            </StackPanel>
-            <StackPanel Grid.Column="2">
-                <TextBlock Text="Category (optional)" Style="{StaticResource CaptionText}" />
-                <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}"
-                          DisplayMemberPath="Name" Padding="10,8" Margin="0,4,0,0" />
-            </StackPanel>
-        </Grid>
-
-        <TextBlock Text="Reorder level (whole units)" Style="{StaticResource CaptionText}" />
-        <TextBox Text="{Binding ReorderLevel, UpdateSourceTrigger=PropertyChanged}" Padding="10,8" Margin="0,4,0,20"
-                 Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
-                 HorizontalAlignment="Left" Width="180" />
-
-        <Border Background="#FFF1F1" BorderBrush="#F1B0B0" BorderThickness="1" CornerRadius="6" Padding="10"
-                Margin="0,0,0,16"
-                Visibility="{Binding ErrorMessage, Converter={StaticResource EmptyStringToCollapsedConverter}}">
-            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" />
-        </Border>
-
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="Cancel" Click="OnCancel" Padding="16,10" Margin="0,0,8,0" />
-            <Button Content="Save product" Command="{Binding SaveCommand}" IsDefault="True"
-                    Style="{StaticResource PrimaryButton}"
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Cancel" Click="OnCancel"
+                    Style="{StaticResource Button.Secondary}"
+                    Padding="16,8" Margin="0,0,8,0" />
+            <Button Content="{Binding SaveButtonText}"
+                    Command="{Binding SaveCommand}"
+                    IsDefault="True"
+                    Style="{StaticResource Button.Primary}"
                     IsEnabled="{Binding IsSaving, Converter={StaticResource InvertBoolConverter}}" />
         </StackPanel>
-    </StackPanel>
+    </Grid>
 </Window>
