@@ -1,0 +1,92 @@
+﻿<Window x:Class="Pos.Desktop.Views.AddExpenseView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Record expense" Height="500" Width="500"
+        MinHeight="440" MinWidth="440"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="{StaticResource BackgroundBrush}"
+        FontFamily="Segoe UI">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="Record an expense" Style="{StaticResource Text.Title}" />
+            <TextBlock Text="Every shilling spent that isn't stock: rent, salaries, transport, etc."
+                       Style="{StaticResource Text.Caption}" Margin="0,2,0,0" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="Category *" Style="{StaticResource Text.Label}" />
+                <ComboBox IsEditable="True"
+                          Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}"
+                          ItemsSource="{Binding CommonCategories}"
+                          Padding="10,8" Margin="0,4,0,4"
+                          FontSize="{StaticResource Font.Size.Body}" />
+                <TextBlock Text="Pick from the list or type your own."
+                           Style="{StaticResource Text.Caption}"
+                           Margin="0,0,0,16" />
+
+                <TextBlock Text="Amount (KES) *" Style="{StaticResource Text.Label}" />
+                <TextBox Text="{Binding AmountText, UpdateSourceTrigger=PropertyChanged}"
+                         Padding="10,8" Margin="0,4,0,16"
+                         FontSize="{StaticResource Font.Size.BodyLarge}"
+                         Background="{StaticResource Brush.Surface}"
+                         BorderBrush="{StaticResource Brush.Border.Default}"
+                         BorderThickness="1" />
+
+                <TextBlock Text="Date" Style="{StaticResource Text.Label}" />
+                <TextBox Text="{Binding BusinessDate, UpdateSourceTrigger=PropertyChanged}"
+                         Padding="10,8" Margin="0,4,0,4"
+                         Background="{StaticResource Brush.Surface}"
+                         BorderBrush="{StaticResource Brush.Border.Default}"
+                         BorderThickness="1"
+                         FontSize="{StaticResource Font.Size.Body}" />
+                <TextBlock Text="YYYY-MM-DD. Defaults to today."
+                           Style="{StaticResource Text.Caption}"
+                           Margin="0,0,0,16" />
+
+                <TextBlock Text="Description (optional)" Style="{StaticResource Text.Label}" />
+                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                         Padding="10,8" Margin="0,4,0,0"
+                         Height="60"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto"
+                         Background="{StaticResource Brush.Surface}"
+                         BorderBrush="{StaticResource Brush.Border.Default}"
+                         BorderThickness="1"
+                         FontSize="{StaticResource Font.Size.Body}" />
+
+                <Border Background="{StaticResource Brush.Danger.Subtle}"
+                        BorderBrush="{StaticResource Brush.Danger}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Radius.Medium}"
+                        Padding="10"
+                        Margin="0,12,0,0"
+                        Visibility="{Binding ErrorMessage, Converter={StaticResource EmptyStringToCollapsedConverter}}">
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               Foreground="{StaticResource Brush.Danger}"
+                               TextWrapping="Wrap"
+                               FontSize="{StaticResource Font.Size.Body}" />
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Cancel" Click="OnCancel"
+                    Style="{StaticResource Button.Secondary}"
+                    Padding="16,8" Margin="0,0,8,0" />
+            <Button Content="Save expense"
+                    Command="{Binding SaveCommand}"
+                    IsDefault="True"
+                    Style="{StaticResource Button.Primary}"
+                    IsEnabled="{Binding IsSaving, Converter={StaticResource InvertBoolConverter}}" />
+        </StackPanel>
+    </Grid>
+</Window>

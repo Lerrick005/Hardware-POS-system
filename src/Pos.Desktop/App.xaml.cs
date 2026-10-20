@@ -3,6 +3,7 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Pos.Application.Backup;
 using Pos.Application.Catalog;
+using Pos.Application.Expenses;
 using Pos.Application.Customers;
 using Pos.Application.Reports;
 using Pos.Application.Sales;
@@ -14,6 +15,7 @@ using Pos.Desktop.ViewModels;
 using Pos.Desktop.Views;
 using Pos.Infrastructure.Backup;
 using Pos.Infrastructure.Catalog;
+using Pos.Infrastructure.Expenses;
 using Pos.Infrastructure.Customers;
 using Pos.Infrastructure.Data;
 using Pos.Infrastructure.Logging;
@@ -73,6 +75,7 @@ public partial class App : System.Windows.Application
         services.AddSingleton<IReportsQuery, ReportsQuery>();
         services.AddSingleton<IDashboardQuery, DashboardQuery>();
         services.AddSingleton<ISettingsService, SettingsService>();
+        services.AddSingleton<IExpensesService, ExpensesService>();
 
         services.AddSingleton<LoginViewModel>();
         services.AddSingleton<DashboardViewModel>();
@@ -87,6 +90,9 @@ public partial class App : System.Windows.Application
         services.AddSingleton<AuditViewModel>();
         services.AddSingleton<AboutViewModel>();
         services.AddSingleton<SettingsHubViewModel>();
+        services.AddSingleton<ExpensesViewModel>();
+        services.AddTransient<AddExpenseViewModel>();
+        services.AddTransient<AddExpenseView>();
 
         services.AddTransient<AddProductViewModel>();
         services.AddTransient<AddProductView>();
@@ -228,6 +234,14 @@ public partial class App : System.Windows.Application
             return dialog;
         };
 
+        ExpensesViewModel expensesVm = _services.GetRequiredService<ExpensesViewModel>();
+        expensesVm.CreateAddExpenseDialog = () =>
+        {
+            AddExpenseView dialog = _services.GetRequiredService<AddExpenseView>();
+            dialog.Owner = MainWindow;
+            return dialog;
+        };
+
         ISettingsService settingsService = _services.GetRequiredService<ISettingsService>();
         SellViewModel sellVm = _services.GetRequiredService<SellViewModel>();
         sellVm.CreateReceiptDialog = (SaleResult sale) =>
@@ -284,3 +298,4 @@ public partial class App : System.Windows.Application
         base.OnExit(e);
     }
 }
+

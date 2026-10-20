@@ -15,6 +15,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly SellViewModel _sell;
     private readonly ReportsViewModel _reports;
     private readonly SettingsHubViewModel _settingsHub;
+    private readonly ExpensesViewModel _expenses;
     private readonly IUserSession _session;
     private readonly ILogger<MainWindowViewModel> _logger;
 
@@ -24,6 +25,7 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private string userLabel = "Not signed in";
 
     public bool IsAdmin => string.Equals(_session.CurrentUserRole, "ADMIN", StringComparison.Ordinal);
+    public bool IsManagerOrAdmin => IsAdmin || string.Equals(_session.CurrentUserRole, "MANAGER", StringComparison.Ordinal);
 
     public MainWindowViewModel(
         DashboardViewModel dashboard,
@@ -34,6 +36,7 @@ public partial class MainWindowViewModel : ObservableObject
         SellViewModel sell,
         ReportsViewModel reports,
         SettingsHubViewModel settingsHub,
+        ExpensesViewModel expenses,
         IUserSession session,
         ILogger<MainWindowViewModel> logger)
     {
@@ -45,72 +48,32 @@ public partial class MainWindowViewModel : ObservableObject
         _sell = sell;
         _reports = reports;
         _settingsHub = settingsHub;
+        _expenses = expenses;
         _session = session;
         _logger = logger;
         ShowDashboard();
     }
 
-    [RelayCommand]
-    private void ShowDashboard()
-    {
-        _ = _dashboard.LoadAsync();
-        CurrentView = _dashboard;
-        CurrentTitle = "Dashboard";
-        SelectedNav = "Dashboard";
-    }
+    [RelayCommand] private void ShowDashboard() { _ = _dashboard.LoadAsync(); CurrentView = _dashboard; CurrentTitle = "Dashboard"; SelectedNav = "Dashboard"; }
+    [RelayCommand] private async Task ShowSellAsync() { await _sell.LoadAsync(); CurrentView = _sell; CurrentTitle = "Sell"; SelectedNav = "Sell"; }
+    [RelayCommand] private async Task ShowProductsAsync() { await _products.RefreshAsync(); CurrentView = _products; CurrentTitle = "Products"; SelectedNav = "Products"; }
+    [RelayCommand] private async Task ShowStockAsync() { await _receiveGoods.RefreshAsync(); CurrentView = _receiveGoods; CurrentTitle = "Stock"; SelectedNav = "Stock"; }
+    [RelayCommand] private async Task ShowCustomersAsync() { await _customers.RefreshAsync(); CurrentView = _customers; CurrentTitle = "Customers"; SelectedNav = "Customers"; }
+    [RelayCommand] private async Task ShowSuppliersAsync() { await _suppliers.RefreshAsync(); CurrentView = _suppliers; CurrentTitle = "Suppliers"; SelectedNav = "Suppliers"; }
+    [RelayCommand] private async Task ShowReportsAsync() { await _reports.LoadAsync(); CurrentView = _reports; CurrentTitle = "Reports"; SelectedNav = "Reports"; }
 
     [RelayCommand]
-    private async Task ShowSellAsync()
+    private async Task ShowExpensesAsync()
     {
-        await _sell.LoadAsync();
-        CurrentView = _sell;
-        CurrentTitle = "Sell";
-        SelectedNav = "Sell";
-    }
-
-    [RelayCommand]
-    private async Task ShowProductsAsync()
-    {
-        await _products.RefreshAsync();
-        CurrentView = _products;
-        CurrentTitle = "Products";
-        SelectedNav = "Products";
-    }
-
-    [RelayCommand]
-    private async Task ShowStockAsync()
-    {
-        await _receiveGoods.RefreshAsync();
-        CurrentView = _receiveGoods;
-        CurrentTitle = "Stock";
-        SelectedNav = "Stock";
-    }
-
-    [RelayCommand]
-    private async Task ShowCustomersAsync()
-    {
-        await _customers.RefreshAsync();
-        CurrentView = _customers;
-        CurrentTitle = "Customers";
-        SelectedNav = "Customers";
-    }
-
-    [RelayCommand]
-    private async Task ShowSuppliersAsync()
-    {
-        await _suppliers.RefreshAsync();
-        CurrentView = _suppliers;
-        CurrentTitle = "Suppliers";
-        SelectedNav = "Suppliers";
-    }
-
-    [RelayCommand]
-    private async Task ShowReportsAsync()
-    {
-        await _reports.LoadAsync();
-        CurrentView = _reports;
-        CurrentTitle = "Reports";
-        SelectedNav = "Reports";
+        if (!IsManagerOrAdmin)
+        {
+            _logger.LogWarning("Non-manager tried to open Expenses");
+            return;
+        }
+        await _expenses.LoadAsync();
+        CurrentView = _expenses;
+        CurrentTitle = "Expenses";
+        SelectedNav = "Expenses";
     }
 
     [RelayCommand]
@@ -118,12 +81,9 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (!IsAdmin)
         {
-            _logger.LogWarning(
-                "Non-admin user {Name} ({Role}) attempted to open Settings.",
-                _session.CurrentUserName, _session.CurrentUserRole);
+            _logger.LogWarning("Non-admin user attempted to open Settings");
             return;
         }
-
         _ = _settingsHub.LoadAsync();
         CurrentView = _settingsHub;
         CurrentTitle = "Settings";

@@ -8,6 +8,7 @@
     <DataTemplate DataType="{x:Type vm:ReceiveGoodsViewModel}"><views:ReceiveGoodsView /></DataTemplate>
     <DataTemplate DataType="{x:Type vm:CustomersViewModel}"><views:CustomersView /></DataTemplate>
     <DataTemplate DataType="{x:Type vm:SuppliersViewModel}"><views:SuppliersView /></DataTemplate>
+    <DataTemplate DataType="{x:Type vm:ExpensesViewModel}"><views:ExpensesView /></DataTemplate>
     <DataTemplate DataType="{x:Type vm:SellViewModel}"><views:SellView /></DataTemplate>
     <DataTemplate DataType="{x:Type vm:ReportsViewModel}"><views:ReportsView /></DataTemplate>
 

@@ -74,6 +74,10 @@
                 <RadioButton Content="Customers" Style="{StaticResource NavButton}" Margin="0,0,0,4"
                              IsChecked="{Binding SelectedNav, Converter={StaticResource EqualsConverter}, ConverterParameter=Customers, Mode=OneWay}"
                              Command="{Binding ShowCustomersCommand}" />
+                <RadioButton Content="Expenses" Style="{StaticResource NavButton}" Margin="0,0,0,4"
+                             IsChecked="{Binding SelectedNav, Converter={StaticResource EqualsConverter}, ConverterParameter=Expenses, Mode=OneWay}"
+                             Command="{Binding ShowExpensesCommand}"
+                             Visibility="{Binding IsManagerOrAdmin, Converter={StaticResource BoolToVisibilityConverter}}" />
                 <RadioButton Content="Reports" Style="{StaticResource NavButton}" Margin="0,0,0,4"
                              IsChecked="{Binding SelectedNav, Converter={StaticResource EqualsConverter}, ConverterParameter=Reports, Mode=OneWay}"
                              Command="{Binding ShowReportsCommand}" />
@@ -87,4 +91,5 @@
         <ContentControl Grid.Row="1" Grid.Column="1" Content="{Binding CurrentView}" />
     </Grid>
 </Window>
+
 
