@@ -218,7 +218,9 @@
     <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     <conv:MilliToUnitsConverter x:Key="MilliToUnitsConverter" />
     <conv:CentsToShillingsConverter x:Key="CentsToShillingsConverter" />
+    <conv:EqualsConverterToVisibility x:Key="EqualsConverterToVisibility" />
 </ResourceDictionary>
+
 
 
 

@@ -9,6 +9,8 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly ProductsViewModel _products;
     private readonly ReceiveGoodsViewModel _receiveGoods;
     private readonly CustomersViewModel _customers;
+    private readonly SellViewModel _sell;
+    private readonly ReportsViewModel _reports;
 
     [ObservableProperty]
     private object? currentView;
@@ -26,12 +28,16 @@ public partial class MainWindowViewModel : ObservableObject
         DashboardViewModel dashboard,
         ProductsViewModel products,
         ReceiveGoodsViewModel receiveGoods,
-        CustomersViewModel customers)
+        CustomersViewModel customers,
+        SellViewModel sell,
+        ReportsViewModel reports)
     {
         _dashboard = dashboard;
         _products = products;
         _receiveGoods = receiveGoods;
         _customers = customers;
+        _sell = sell;
+        _reports = reports;
         ShowDashboard();
     }
 
@@ -41,6 +47,15 @@ public partial class MainWindowViewModel : ObservableObject
         CurrentView = _dashboard;
         CurrentTitle = "Dashboard";
         SelectedNav = "Dashboard";
+    }
+
+    [RelayCommand]
+    private async Task ShowSellAsync()
+    {
+        await _sell.LoadAsync();
+        CurrentView = _sell;
+        CurrentTitle = "Sell";
+        SelectedNav = "Sell";
     }
 
     [RelayCommand]
@@ -71,10 +86,13 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ShowSell() => NavigateToPlaceholder("Sell", "The selling screen is being built.");
-
-    [RelayCommand]
-    private void ShowReports() => NavigateToPlaceholder("Reports", "Daily sales, profit and stock reports will appear here.");
+    private async Task ShowReportsAsync()
+    {
+        await _reports.LoadAsync();
+        CurrentView = _reports;
+        CurrentTitle = "Reports";
+        SelectedNav = "Reports";
+    }
 
     [RelayCommand]
     private void ShowSettings() => NavigateToPlaceholder("Settings", "Shop profile, printer and backup settings will appear here.");

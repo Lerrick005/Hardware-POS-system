@@ -3,6 +3,8 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Pos.Application.Catalog;
 using Pos.Application.Customers;
+using Pos.Application.Reports;
+using Pos.Application.Sales;
 using Pos.Application.Stock;
 using Pos.Desktop.ViewModels;
 using Pos.Desktop.Views;
@@ -10,6 +12,8 @@ using Pos.Infrastructure.Catalog;
 using Pos.Infrastructure.Customers;
 using Pos.Infrastructure.Data;
 using Pos.Infrastructure.Logging;
+using Pos.Infrastructure.Reports;
+using Pos.Infrastructure.Sales;
 using Pos.Infrastructure.Stock;
 using Serilog;
 
@@ -49,11 +53,15 @@ public partial class App : System.Windows.Application
         services.AddSingleton<IReceiveGoodsQuery, ReceiveGoodsQuery>();
         services.AddSingleton<ICustomerRepository, CustomerRepository>();
         services.AddSingleton<ICustomerAccountService, CustomerAccountService>();
+        services.AddSingleton<ISellService, SellService>();
+        services.AddSingleton<IReportsQuery, ReportsQuery>();
 
         services.AddSingleton<DashboardViewModel>();
         services.AddSingleton<ProductsViewModel>();
         services.AddSingleton<ReceiveGoodsViewModel>();
         services.AddSingleton<CustomersViewModel>();
+        services.AddSingleton<SellViewModel>();
+        services.AddSingleton<ReportsViewModel>();
         services.AddTransient<AddProductViewModel>();
         services.AddTransient<AddProductView>();
         services.AddTransient<CategoriesViewModel>();
@@ -121,6 +129,14 @@ public partial class App : System.Windows.Application
             return dialog;
         };
 
+        SellViewModel sellVm = _services.GetRequiredService<SellViewModel>();
+        sellVm.CreateReceiptDialog = (SaleResult sale) =>
+        {
+            ReceiptView dialog = new(sale);
+            dialog.Owner = MainWindow;
+            return dialog;
+        };
+
         MigrationRunner runner = _services.GetRequiredService<MigrationRunner>();
         MigrationResult migration = runner.Run();
         Log.Information(
@@ -137,9 +153,27 @@ public partial class App : System.Windows.Application
             return;
         }
 
+        SeedDefaultCashier(_services.GetRequiredService<DbConnectionFactory>());
+
         MainWindow window = _services.GetRequiredService<MainWindow>();
         MainWindow = window;
         window.Show();
+    }
+
+    private static void SeedDefaultCashier(DbConnectionFactory factory)
+    {
+        using var connection = factory.CreateOpen();
+        using var countCmd = connection.CreateCommand();
+        countCmd.CommandText = "SELECT COUNT(1) FROM users";
+        long userCount = Convert.ToInt64(countCmd.ExecuteScalar(), System.Globalization.CultureInfo.InvariantCulture);
+        if (userCount > 0)
+        {
+            return;
+        }
+        using var seedCmd = connection.CreateCommand();
+        seedCmd.CommandText = "INSERT INTO users(name, role, pin_hash) VALUES ('Cashier', 'CASHIER', 'PIN_NOT_SET')";
+        seedCmd.ExecuteNonQuery();
+        Log.Warning("Seeded default Cashier user - login screen is not yet built.");
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -150,3 +184,4 @@ public partial class App : System.Windows.Application
         base.OnExit(e);
     }
 }
+

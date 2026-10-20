@@ -36,6 +36,17 @@ public sealed record SaleRequest(
     int UserId,
     int? CashSessionId);
 
+public sealed record SaleResultLine(
+    string ProductName,
+    long QtyMilli,
+    long UnitPriceCents,
+    long LineTotalCents);
+
+public sealed record SaleResultPayment(
+    string Method,
+    long AmountCents,
+    string? Reference);
+
 public sealed record SaleResult(
     int SaleId,
     string ReceiptNumber,
@@ -44,7 +55,9 @@ public sealed record SaleResult(
     long TaxCents,
     long TotalCents,
     long PaidCents,
-    long ChangeCents);
+    long ChangeCents,
+    IReadOnlyList<SaleResultLine> Lines,
+    IReadOnlyList<SaleResultPayment> Payments);
 
 public sealed class SaleValidationException : Exception
 {
@@ -65,3 +78,4 @@ public interface ISellService
     /// </summary>
     Task<SaleResult> CompleteSaleAsync(SaleRequest request, CancellationToken ct = default);
 }
+

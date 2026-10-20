@@ -224,4 +224,47 @@
          ===================================================================== -->
     <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource Button.Primary}" />
     <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource Button.Secondary}" />
+
+    <!-- ========== REPORT TAB STYLE ========== -->
+    <Style x:Key="ReportTabStyle" TargetType="RadioButton">
+        <Setter Property="FontFamily" Value="{StaticResource Font.UI}" />
+        <Setter Property="FontSize" Value="{StaticResource Font.Size.Body}" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Secondary}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="Root"
+                            Background="Transparent"
+                            CornerRadius="{StaticResource Radius.Medium}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="#E2E8F0" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="White" />
+                            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ========== KPI CARD ========== -->
+    <Style x:Key="KpiCard" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource Brush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border.Default}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource Radius.Large}" />
+        <Setter Property="Padding" Value="20,16" />
+        <Setter Property="MinWidth" Value="180" />
+    </Style>
+
 </ResourceDictionary>
+

@@ -133,6 +133,17 @@ public sealed partial class SellService : ISellService
 
             tx.Commit();
 
+            var resultLines = lines.Select(l => new SaleResultLine(
+                ProductName: l.ProductName,
+                QtyMilli: l.QtyMilli,
+                UnitPriceCents: l.UnitPriceCents,
+                LineTotalCents: l.LineTotalCents)).ToList();
+
+            var resultPayments = request.Payments.Select(p => new SaleResultPayment(
+                Method: p.Method,
+                AmountCents: p.AmountCents,
+                Reference: p.Reference)).ToList();
+
             return new SaleResult(
                 SaleId: (int)saleId,
                 ReceiptNumber: receiptNumber,
@@ -141,7 +152,9 @@ public sealed partial class SellService : ISellService
                 TaxCents: taxTotal,
                 TotalCents: totalCents,
                 PaidCents: paidTotal,
-                ChangeCents: change);
+                ChangeCents: change,
+                Lines: resultLines,
+                Payments: resultPayments);
         }
         catch
         {
@@ -604,4 +617,5 @@ public sealed partial class SellService : ISellService
     [GeneratedRegex("^[0-9]{4}-[0-9]{2}-[0-9]{2}$")]
     private static partial Regex BusinessDateRegex();
 }
+
 

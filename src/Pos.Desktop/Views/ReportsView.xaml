@@ -1,0 +1,293 @@
+﻿<UserControl x:Class="Pos.Desktop.Views.ReportsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="32,28,32,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Reports" Style="{StaticResource Text.Display}" />
+                <TextBlock Text="How the shop is doing."
+                           Style="{StaticResource Text.Body}"
+                           Foreground="{StaticResource Brush.Text.Secondary}"
+                           Margin="0,4,0,0" />
+            </StackPanel>
+            <Button Grid.Column="1"
+                    Style="{StaticResource Button.Secondary}"
+                    Command="{Binding RefreshCommand}"
+                    VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{StaticResource Icon.Refresh}"
+                               FontFamily="{StaticResource Font.Icon}"
+                               FontSize="14"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0" />
+                    <TextBlock Text="Refresh" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <Border Grid.Row="1"
+                Background="{StaticResource Brush.Surface.Sunken}"
+                CornerRadius="{StaticResource Radius.Medium}"
+                Padding="4"
+                Margin="0,0,0,16"
+                HorizontalAlignment="Left">
+            <StackPanel Orientation="Horizontal">
+                <RadioButton Content="Sales"
+                             GroupName="ReportTab"
+                             IsChecked="{Binding ActiveTab, Converter={StaticResource EqualsConverter}, ConverterParameter=Sales, Mode=OneWay}"
+                             Style="{StaticResource ReportTabStyle}"
+                             Tag="Sales"
+                             Click="OnTabClick" />
+                <RadioButton Content="Stock"
+                             GroupName="ReportTab"
+                             IsChecked="{Binding ActiveTab, Converter={StaticResource EqualsConverter}, ConverterParameter=Stock, Mode=OneWay}"
+                             Style="{StaticResource ReportTabStyle}"
+                             Tag="Stock"
+                             Click="OnTabClick" />
+                <RadioButton Content="Debtors"
+                             GroupName="ReportTab"
+                             IsChecked="{Binding ActiveTab, Converter={StaticResource EqualsConverter}, ConverterParameter=Debtors, Mode=OneWay}"
+                             Style="{StaticResource ReportTabStyle}"
+                             Tag="Debtors"
+                             Click="OnTabClick" />
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="2">
+
+            <!-- ============ SALES TAB ============ -->
+            <Grid Visibility="{Binding ActiveTab, Converter={StaticResource EqualsConverterToVisibility}, ConverterParameter=Sales}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Content="Today"
+                            Command="{Binding SetTodayCommand}"
+                            Style="{StaticResource Button.Secondary}"
+                            Padding="12,6" Margin="0,0,8,0" />
+                    <Button Grid.Column="1" Content="This week"
+                            Command="{Binding SetThisWeekCommand}"
+                            Style="{StaticResource Button.Secondary}"
+                            Padding="12,6" Margin="0,0,8,0" />
+                    <Button Grid.Column="2" Content="This month"
+                            Command="{Binding SetThisMonthCommand}"
+                            Style="{StaticResource Button.Secondary}"
+                            Padding="12,6" Margin="0,0,16,0" />
+                    <TextBlock Grid.Column="3" Text="From" Style="{StaticResource Text.Caption}"
+                               VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <TextBox Grid.Column="4" Text="{Binding DateFrom, UpdateSourceTrigger=PropertyChanged}"
+                             Width="110" Padding="6,4" Margin="0,0,12,0"
+                             Background="{StaticResource Brush.Surface}"
+                             BorderBrush="{StaticResource Brush.Border.Default}"
+                             BorderThickness="1" />
+                    <TextBlock Grid.Column="5" Text="To" Style="{StaticResource Text.Caption}"
+                               VerticalAlignment="Center" Margin="0,0,6,0" HorizontalAlignment="Left" />
+                </Grid>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,16">
+                    <Border Style="{StaticResource KpiCard}" Margin="0,0,12,0">
+                        <StackPanel>
+                            <TextBlock Text="Total sales" Style="{StaticResource Text.Caption}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <TextBlock Text="{Binding TotalSalesDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="24" />
+                                <TextBlock Text=" KES" Style="{StaticResource Text.Body}" VerticalAlignment="Bottom" Margin="4,0,0,4"
+                                           Foreground="{StaticResource Brush.Text.Secondary}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource KpiCard}" Margin="0,0,12,0">
+                        <StackPanel>
+                            <TextBlock Text="Transactions" Style="{StaticResource Text.Caption}" />
+                            <TextBlock Text="{Binding TransactionCountDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="24" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource KpiCard}" Margin="0,0,12,0">
+                        <StackPanel>
+                            <TextBlock Text="Avg. sale" Style="{StaticResource Text.Caption}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <TextBlock Text="{Binding AvgTicketDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="24" />
+                                <TextBlock Text=" KES" Style="{StaticResource Text.Body}" VerticalAlignment="Bottom" Margin="4,0,0,4"
+                                           Foreground="{StaticResource Brush.Text.Secondary}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource KpiCard}">
+                        <StackPanel>
+                            <TextBlock Text="Cash / M-Pesa / Credit" Style="{StaticResource Text.Caption}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <TextBlock Text="{Binding CashDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="18" />
+                                <TextBlock Text=" / " Style="{StaticResource Text.Body}" VerticalAlignment="Bottom" Margin="0,0,0,3" />
+                                <TextBlock Text="{Binding MpesaDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="18" />
+                                <TextBlock Text=" / " Style="{StaticResource Text.Body}" VerticalAlignment="Bottom" Margin="0,0,0,3" />
+                                <TextBlock Text="{Binding CreditDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="18" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <Border Grid.Row="2"
+                        Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.Border.Default}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Radius.Large}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Background="{StaticResource Brush.Surface.Sunken}"
+                                BorderBrush="{StaticResource Brush.Border.Default}"
+                                BorderThickness="0,0,0,1"
+                                CornerRadius="10,10,0,0"
+                                Padding="16,10">
+                            <TextBlock Text="Top products" Style="{StaticResource Text.Label}" />
+                        </Border>
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding TopProducts}"
+                                  Style="{StaticResource DataGrid.Default}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="*" />
+                                <DataGridTextColumn Header="Qty sold"
+                                                    Binding="{Binding QtySoldMilli, Converter={StaticResource MilliToUnitsConverter}}"
+                                                    Width="120"
+                                                    CellStyle="{StaticResource DataGrid.NumericCell}"
+                                                    HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                                <DataGridTextColumn Header="Revenue (KES)"
+                                                    Binding="{Binding RevenueCents, Converter={StaticResource CentsToShillingsConverter}}"
+                                                    Width="140"
+                                                    CellStyle="{StaticResource DataGrid.NumericCell}"
+                                                    HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- ============ STOCK TAB ============ -->
+            <Grid Visibility="{Binding ActiveTab, Converter={StaticResource EqualsConverterToVisibility}, ConverterParameter=Stock}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+                    <Border Style="{StaticResource KpiCard}" Margin="0,0,12,0">
+                        <StackPanel>
+                            <TextBlock Text="Cost value" Style="{StaticResource Text.Caption}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <TextBlock Text="{Binding StockCostDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="24" />
+                                <TextBlock Text=" KES" Style="{StaticResource Text.Body}" VerticalAlignment="Bottom" Margin="4,0,0,4"
+                                           Foreground="{StaticResource Brush.Text.Secondary}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource KpiCard}">
+                        <StackPanel>
+                            <TextBlock Text="Retail value (potential)" Style="{StaticResource Text.Caption}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <TextBlock Text="{Binding StockRetailDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="24"
+                                           Foreground="{StaticResource Brush.Accent}" />
+                                <TextBlock Text=" KES" Style="{StaticResource Text.Body}" VerticalAlignment="Bottom" Margin="4,0,0,4"
+                                           Foreground="{StaticResource Brush.Text.Secondary}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <Border Grid.Row="1"
+                        Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.Border.Default}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Radius.Large}">
+                    <DataGrid ItemsSource="{Binding StockValuation}"
+                              Style="{StaticResource DataGrid.Default}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Category" Binding="{Binding CategoryName}" Width="*" />
+                            <DataGridTextColumn Header="Products"
+                                                Binding="{Binding ProductCount}"
+                                                Width="100"
+                                                CellStyle="{StaticResource DataGrid.NumericCell}"
+                                                HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                            <DataGridTextColumn Header="Cost value"
+                                                Binding="{Binding TotalCostCents, Converter={StaticResource CentsToShillingsConverter}}"
+                                                Width="140"
+                                                CellStyle="{StaticResource DataGrid.NumericCell}"
+                                                HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                            <DataGridTextColumn Header="Retail value"
+                                                Binding="{Binding TotalRetailCents, Converter={StaticResource CentsToShillingsConverter}}"
+                                                Width="140"
+                                                CellStyle="{StaticResource DataGrid.NumericCell}"
+                                                HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </Grid>
+
+            <!-- ============ DEBTORS TAB ============ -->
+            <Grid Visibility="{Binding ActiveTab, Converter={StaticResource EqualsConverterToVisibility}, ConverterParameter=Debtors}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Style="{StaticResource KpiCard}" HorizontalAlignment="Left" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="Total owed to you" Style="{StaticResource Text.Caption}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock Text="{Binding DebtorsTotalDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="26"
+                                       Foreground="{StaticResource Brush.Danger}" />
+                            <TextBlock Text=" KES" Style="{StaticResource Text.Body}" VerticalAlignment="Bottom" Margin="4,0,0,4"
+                                       Foreground="{StaticResource Brush.Text.Secondary}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="1"
+                        Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.Border.Default}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Radius.Large}">
+                    <DataGrid ItemsSource="{Binding Debtors}"
+                              Style="{StaticResource DataGrid.Default}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Customer" Binding="{Binding CustomerName}" Width="*" />
+                            <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="150" />
+                            <DataGridTextColumn Header="Owed (KES)"
+                                                Binding="{Binding BalanceCents, Converter={StaticResource CentsToShillingsConverter}}"
+                                                Width="140"
+                                                CellStyle="{StaticResource DataGrid.NumericCell}"
+                                                HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                            <DataGridTextColumn Header="Last activity" Binding="{Binding LastActivityDate}" Width="130" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <Grid Grid.Row="3" Margin="0,12,0,0">
+            <TextBlock Text="{Binding StatusText}" Style="{StaticResource Text.Caption}" />
+        </Grid>
+    </Grid>
+</UserControl>
+

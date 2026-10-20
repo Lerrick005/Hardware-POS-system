@@ -1,0 +1,366 @@
+﻿<UserControl x:Class="Pos.Desktop.Views.SellView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="24,20,24,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="340" />
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Sell" Style="{StaticResource Text.Display}" />
+                <TextBlock Text="Search, scan, add to cart, take payment."
+                           Style="{StaticResource Text.Body}"
+                           Foreground="{StaticResource Brush.Text.Secondary}"
+                           Margin="0,4,0,0" />
+            </StackPanel>
+            <Button Grid.Column="1"
+                    Content="Clear cart"
+                    Command="{Binding ClearCartCommand}"
+                    Style="{StaticResource Button.Secondary}"
+                    Padding="14,8"
+                    VerticalAlignment="Center" />
+        </Grid>
+
+        <Grid Grid.Row="1" Grid.Column="0" Margin="0,0,16,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="90" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0"
+                        Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.Border.Default}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Radius.Medium}"
+                        Height="40">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="{StaticResource Icon.Search}"
+                                   FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="14"
+                                   Foreground="{StaticResource Brush.Text.Tertiary}"
+                                   VerticalAlignment="Center"
+                                   Margin="12,0,0,0" />
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 Padding="8,0"
+                                 FontSize="{StaticResource Font.Size.Body}"
+                                 VerticalContentAlignment="Center" />
+                    </Grid>
+                </Border>
+                <TextBox Grid.Column="1"
+                         Text="{Binding QuantityText, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="8,0,0,0"
+                         Padding="8,0"
+                         Height="40"
+                         VerticalContentAlignment="Center"
+                         HorizontalContentAlignment="Center"
+                         FontSize="{StaticResource Font.Size.BodyLarge}"
+                         Background="{StaticResource Brush.Surface}"
+                         BorderBrush="{StaticResource Brush.Border.Default}"
+                         BorderThickness="1" />
+                <Button Grid.Column="2"
+                        Content="Add"
+                        Command="{Binding AddToCartCommand}"
+                        Style="{StaticResource Button.Primary}"
+                        Padding="20,0"
+                        Height="40"
+                        Margin="8,0,0,0" />
+            </Grid>
+
+            <Border Grid.Row="1"
+                    Background="{StaticResource Brush.Surface}"
+                    BorderBrush="{StaticResource Brush.Border.Default}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource Radius.Medium}"
+                    MaxHeight="180"
+                    Margin="0,0,0,12">
+                <ListBox ItemsSource="{Binding SearchResults}"
+                         SelectedItem="{Binding PickerProduct}"
+                         BorderThickness="0"
+                         MaxHeight="180">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="8,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body}" />
+                                    <TextBlock Text="{Binding Sku, StringFormat=' - {0}'}"
+                                               Style="{StaticResource Text.Caption}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding RetailPriceCents, Converter={StaticResource CentsToShillingsConverter}}"
+                                           Style="{StaticResource Text.Numeric}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+
+            <Border Grid.Row="2"
+                    Background="{StaticResource Brush.Surface}"
+                    BorderBrush="{StaticResource Brush.Border.Default}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource Radius.Large}">
+                <DataGrid ItemsSource="{Binding Lines}"
+                          Style="{StaticResource DataGrid.Default}"
+                          RowHeight="52">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Product" Width="*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding ProductName}" Style="{StaticResource Text.Body}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding UnitName, StringFormat='per {0}'}"
+                                                   Style="{StaticResource Text.Caption}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Qty"
+                                            Binding="{Binding QtyText, UpdateSourceTrigger=PropertyChanged}"
+                                            Width="70"
+                                            CellStyle="{StaticResource DataGrid.NumericCell}"
+                                            HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                        <DataGridTextColumn Header="Price"
+                                            Binding="{Binding UnitPriceText}"
+                                            Width="90"
+                                            CellStyle="{StaticResource DataGrid.NumericCell}"
+                                            HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                        <DataGridTextColumn Header="Discount"
+                                            Binding="{Binding DiscountText, UpdateSourceTrigger=PropertyChanged}"
+                                            Width="90"
+                                            CellStyle="{StaticResource DataGrid.NumericCell}"
+                                            HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                        <DataGridTextColumn Header="Total"
+                                            Binding="{Binding LineTotalDisplay}"
+                                            Width="100"
+                                            CellStyle="{StaticResource DataGrid.NumericCell}"
+                                            HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                        <DataGridTemplateColumn Header="" Width="70">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="X"
+                                            Command="{Binding DataContext.RemoveLineCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource Button.Ghost}"
+                                            Height="28" Padding="10,0"
+                                            Foreground="{StaticResource Brush.Danger}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="1" Grid.Column="1"
+                Background="{StaticResource Brush.Surface}"
+                BorderBrush="{StaticResource Brush.Border.Default}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource Radius.Large}"
+                Padding="16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                    <TextBlock Text="Customer" Style="{StaticResource Text.Label}" />
+                    <ComboBox ItemsSource="{Binding Customers}"
+                              SelectedItem="{Binding SelectedCustomer}"
+                              DisplayMemberPath="Name"
+                              Padding="8,6" Margin="0,4,0,8"
+                              FontSize="{StaticResource Font.Size.Body}" />
+                    <TextBlock Text="Price type" Style="{StaticResource Text.Label}" />
+                    <ComboBox ItemsSource="{Binding PriceTiers}"
+                              SelectedValue="{Binding SelectedPriceTierId}"
+                              SelectedValuePath="Id"
+                              DisplayMemberPath="Name"
+                              Padding="8,6" Margin="0,4,0,0"
+                              FontSize="{StaticResource Font.Size.Body}" />
+                </StackPanel>
+
+                <Border Grid.Row="1"
+                        Background="{StaticResource Brush.Surface.Sunken}"
+                        CornerRadius="{StaticResource Radius.Medium}"
+                        Padding="12"
+                        Margin="0,0,0,12">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Total" Style="{StaticResource Text.Body}"
+                                       Foreground="{StaticResource Brush.Text.Secondary}" />
+                            <TextBlock Grid.Column="1" Text="{Binding TotalDisplay, StringFormat='{}{0} KES'}"
+                                       Style="{StaticResource Text.NumericStrong}" />
+                        </Grid>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Paid" Style="{StaticResource Text.Body}"
+                                       Foreground="{StaticResource Brush.Text.Secondary}" />
+                            <TextBlock Grid.Column="1" Text="{Binding PaidDisplay}"
+                                       Style="{StaticResource Text.Numeric}" />
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Change" Style="{StaticResource Text.Body}"
+                                       Foreground="{StaticResource Brush.Text.Secondary}" />
+                            <TextBlock Grid.Column="1" Text="{Binding ChangeDisplay}"
+                                       Style="{StaticResource Text.NumericStrong}"
+                                       Foreground="{StaticResource Brush.Accent}" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Grid Grid.Row="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Payments" Style="{StaticResource Text.Label}" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button Content="Exact"
+                                    Command="{Binding SetExactCashCommand}"
+                                    Style="{StaticResource Button.Ghost}"
+                                    Height="24" Padding="8,0"
+                                    FontSize="{StaticResource Font.Size.Caption}"
+                                    Margin="0,0,4,0" />
+                            <Button Content="+ Add"
+                                    Command="{Binding AddPaymentCommand}"
+                                    Style="{StaticResource Button.Ghost}"
+                                    Height="24" Padding="8,0"
+                                    FontSize="{StaticResource Font.Size.Caption}" />
+                        </StackPanel>
+                    </Grid>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Payments}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="{StaticResource Brush.Border.Default}"
+                                            BorderThickness="1"
+                                            CornerRadius="{StaticResource Radius.Medium}"
+                                            Padding="8"
+                                            Margin="0,0,0,6">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <ComboBox Grid.Row="0" Grid.Column="0"
+                                                      ItemsSource="{Binding AvailableMethods}"
+                                                      SelectedItem="{Binding MethodCode}"
+                                                      Margin="0,0,4,0"
+                                                      Padding="6,4"
+                                                      FontSize="{StaticResource Font.Size.Caption}" />
+                                            <TextBox Grid.Row="0" Grid.Column="1"
+                                                     Text="{Binding AmountText, UpdateSourceTrigger=PropertyChanged}"
+                                                     Padding="6,4"
+                                                     Margin="0,0,4,0"
+                                                     FontSize="{StaticResource Font.Size.Caption}"
+                                                     Background="{StaticResource Brush.Surface}"
+                                                     BorderBrush="{StaticResource Brush.Border.Default}"
+                                                     BorderThickness="1"
+                                                     TextAlignment="Right" />
+                                            <Button Grid.Row="0" Grid.Column="2"
+                                                    Content="X"
+                                                    Command="{Binding DataContext.RemovePaymentCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource Button.Ghost}"
+                                                    Height="24" Padding="8,0"
+                                                    Foreground="{StaticResource Brush.Danger}"
+                                                    Visibility="{Binding DataContext.HasMultiplePayments, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                            <TextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
+                                                     Text="{Binding Reference, UpdateSourceTrigger=PropertyChanged}"
+                                                     Margin="0,4,0,0"
+                                                     Padding="6,4"
+                                                     FontSize="{StaticResource Font.Size.Caption}"
+                                                     Background="{StaticResource Brush.Surface}"
+                                                     BorderBrush="{StaticResource Brush.Border.Default}"
+                                                     BorderThickness="1"
+                                                     Visibility="{Binding ReferenceRequired, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+
+                <StackPanel Grid.Row="3" Margin="0,12,0,0">
+                    <Border Background="{StaticResource Brush.Danger.Subtle}"
+                            BorderBrush="{StaticResource Brush.Danger}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource Radius.Medium}"
+                            Padding="10"
+                            Margin="0,0,0,8"
+                            Visibility="{Binding ErrorMessage, Converter={StaticResource EmptyStringToCollapsedConverter}}">
+                        <TextBlock Text="{Binding ErrorMessage}"
+                                   Foreground="{StaticResource Brush.Danger}"
+                                   TextWrapping="Wrap"
+                                   FontSize="{StaticResource Font.Size.Body}" />
+                    </Border>
+                    <Button Content="Complete sale"
+                            Command="{Binding CompleteSaleCommand}"
+                            Style="{StaticResource Button.Primary.Large}"
+                            IsDefault="True"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                            HorizontalAlignment="Stretch" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2" Grid.ColumnSpan="2" Margin="0,12,0,0">
+            <TextBlock Text="{Binding StatusText}" Style="{StaticResource Text.Caption}" />
+        </Grid>
+    </Grid>
+</UserControl>

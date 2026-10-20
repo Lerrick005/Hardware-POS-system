@@ -119,3 +119,26 @@ Never delete rows. New requirements get an X- prefix.
 | M4-05 | Payment: cash with change, M-Pesa code, credit, split | TODO | |
 | M4-06 | Receipt view + print stub | TODO | |
 | M4-07 | Cash session link (open/close deferred to M4b) | TODO | |
+
+## M4 Sell — service layer (proven)
+
+| ID | Requirement | Status | Evidence |
+|---|---|---|---|
+| M4-01 | Sale / SaleLine / Payment domain entities | DONE | Pos.Domain.Sales; builds green |
+| M4-02 | ISellService contract | DONE | src/Pos.Application/Sales/ISellService.cs |
+| M4-03 | SellService atomic completion | DONE | SellServiceTests 13/13 pass |
+| M4-04 | Cash sale writes sale + items + payments + stock movement | DONE | CashSale_SingleLine test; stock decremented |
+| M4-05 | Overpayment returns change | DONE | CashSale_Overpayment test |
+| M4-06 | Split payment (cash + M-Pesa + credit) | DONE | MultiLine_SplitPayment test; ledger balance = 6000 |
+| M4-07 | Gap-free receipt numbering | DONE | ReceiptNumbersAreSequential test (RCT-000001..3) |
+| M4-08 | Insufficient stock rolls back | DONE | InsufficientStock test |
+| M4-09 | Underpayment rejected | DONE | Underpayment test |
+| M4-10 | Credit requires customer | DONE | CreditWithoutCustomer test |
+| M4-11 | Credit limit enforced | DONE | CreditExceedsLimit test |
+| M4-12 | Credit + overpayment combination rejected | DONE | CreditWithOverpayment test |
+| M4-13 | Credit must equal shortfall | DONE | CreditLessThanShortfall test |
+| M4-14 | Duplicate product on one sale rejected | DONE | DuplicateProduct test |
+| M4-15 | Unknown product rolls back | DONE | UnknownProduct test |
+| M4-16 | Price override audit | DONE | PriceOverride test |
+| M4-17 | Sell screen (UI) | TODO | next — biggest single UI in the app |
+| M4-18 | Receipt view + print | TODO | after UI |
