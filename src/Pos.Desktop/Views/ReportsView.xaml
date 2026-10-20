@@ -26,11 +26,8 @@
                     Command="{Binding RefreshCommand}"
                     VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="{StaticResource Icon.Refresh}"
-                               FontFamily="{StaticResource Font.Icon}"
-                               FontSize="14"
-                               VerticalAlignment="Center"
-                               Margin="0,0,8,0" />
+                    <TextBlock Text="{StaticResource Icon.Refresh}" FontFamily="{StaticResource Font.Icon}"
+                               FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" />
                     <TextBlock Text="Refresh" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
@@ -43,30 +40,23 @@
                 Margin="0,0,0,16"
                 HorizontalAlignment="Left">
             <StackPanel Orientation="Horizontal">
-                <RadioButton Content="Sales"
-                             GroupName="ReportTab"
+                <RadioButton Content="Sales" GroupName="ReportTab"
                              IsChecked="{Binding ActiveTab, Converter={StaticResource EqualsConverter}, ConverterParameter=Sales, Mode=OneWay}"
-                             Style="{StaticResource ReportTabStyle}"
-                             Tag="Sales"
-                             Click="OnTabClick" />
-                <RadioButton Content="Stock"
-                             GroupName="ReportTab"
+                             Style="{StaticResource ReportTabStyle}" Tag="Sales" Click="OnTabClick" />
+                <RadioButton Content="Profit" GroupName="ReportTab"
+                             IsChecked="{Binding ActiveTab, Converter={StaticResource EqualsConverter}, ConverterParameter=Profit, Mode=OneWay}"
+                             Style="{StaticResource ReportTabStyle}" Tag="Profit" Click="OnTabClick" />
+                <RadioButton Content="Stock" GroupName="ReportTab"
                              IsChecked="{Binding ActiveTab, Converter={StaticResource EqualsConverter}, ConverterParameter=Stock, Mode=OneWay}"
-                             Style="{StaticResource ReportTabStyle}"
-                             Tag="Stock"
-                             Click="OnTabClick" />
-                <RadioButton Content="Debtors"
-                             GroupName="ReportTab"
+                             Style="{StaticResource ReportTabStyle}" Tag="Stock" Click="OnTabClick" />
+                <RadioButton Content="Debtors" GroupName="ReportTab"
                              IsChecked="{Binding ActiveTab, Converter={StaticResource EqualsConverter}, ConverterParameter=Debtors, Mode=OneWay}"
-                             Style="{StaticResource ReportTabStyle}"
-                             Tag="Debtors"
-                             Click="OnTabClick" />
+                             Style="{StaticResource ReportTabStyle}" Tag="Debtors" Click="OnTabClick" />
             </StackPanel>
         </Border>
 
         <Grid Grid.Row="2">
-
-            <!-- ============ SALES TAB ============ -->
+            <!-- SALES TAB -->
             <Grid Visibility="{Binding ActiveTab, Converter={StaticResource EqualsConverterToVisibility}, ConverterParameter=Sales}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -76,8 +66,6 @@
 
                 <Grid Grid.Row="0" Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
@@ -95,15 +83,22 @@
                             Command="{Binding SetThisMonthCommand}"
                             Style="{StaticResource Button.Secondary}"
                             Padding="12,6" Margin="0,0,16,0" />
-                    <TextBlock Grid.Column="3" Text="From" Style="{StaticResource Text.Caption}"
-                               VerticalAlignment="Center" Margin="0,0,6,0" />
-                    <TextBox Grid.Column="4" Text="{Binding DateFrom, UpdateSourceTrigger=PropertyChanged}"
-                             Width="110" Padding="6,4" Margin="0,0,12,0"
-                             Background="{StaticResource Brush.Surface}"
-                             BorderBrush="{StaticResource Brush.Border.Default}"
-                             BorderThickness="1" />
-                    <TextBlock Grid.Column="5" Text="To" Style="{StaticResource Text.Caption}"
-                               VerticalAlignment="Center" Margin="0,0,6,0" HorizontalAlignment="Left" />
+                    <StackPanel Grid.Column="3" Orientation="Horizontal">
+                        <TextBlock Text="From" Style="{StaticResource Text.Caption}"
+                                   VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <TextBox Text="{Binding DateFrom, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="110" Padding="6,4" Margin="0,0,12,0"
+                                 Background="{StaticResource Brush.Surface}"
+                                 BorderBrush="{StaticResource Brush.Border.Default}"
+                                 BorderThickness="1" />
+                        <TextBlock Text="To" Style="{StaticResource Text.Caption}"
+                                   VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <TextBox Text="{Binding DateTo, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="110" Padding="6,4"
+                                 Background="{StaticResource Brush.Surface}"
+                                 BorderBrush="{StaticResource Brush.Border.Default}"
+                                 BorderThickness="1" />
+                    </StackPanel>
                 </Grid>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,16">
@@ -184,7 +179,181 @@
                 </Border>
             </Grid>
 
-            <!-- ============ STOCK TAB ============ -->
+            <!-- PROFIT TAB -->
+            <Grid Visibility="{Binding ActiveTab, Converter={StaticResource EqualsConverterToVisibility}, ConverterParameter=Profit}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Content="Today"
+                            Command="{Binding SetTodayCommand}"
+                            Style="{StaticResource Button.Secondary}"
+                            Padding="12,6" Margin="0,0,8,0" />
+                    <Button Grid.Column="1" Content="This week"
+                            Command="{Binding SetThisWeekCommand}"
+                            Style="{StaticResource Button.Secondary}"
+                            Padding="12,6" Margin="0,0,8,0" />
+                    <Button Grid.Column="2" Content="This month"
+                            Command="{Binding SetThisMonthCommand}"
+                            Style="{StaticResource Button.Secondary}"
+                            Padding="12,6" Margin="0,0,16,0" />
+                    <StackPanel Grid.Column="3" Orientation="Horizontal">
+                        <TextBlock Text="From" Style="{StaticResource Text.Caption}"
+                                   VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <TextBox Text="{Binding DateFrom, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="110" Padding="6,4" Margin="0,0,12,0"
+                                 Background="{StaticResource Brush.Surface}"
+                                 BorderBrush="{StaticResource Brush.Border.Default}"
+                                 BorderThickness="1" />
+                        <TextBlock Text="To" Style="{StaticResource Text.Caption}"
+                                   VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <TextBox Text="{Binding DateTo, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="110" Padding="6,4"
+                                 Background="{StaticResource Brush.Surface}"
+                                 BorderBrush="{StaticResource Brush.Border.Default}"
+                                 BorderThickness="1" />
+                    </StackPanel>
+                </Grid>
+
+                <Border Grid.Row="1"
+                        Background="{StaticResource Brush.Warning.Subtle}"
+                        BorderBrush="{StaticResource Brush.Warning}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Radius.Medium}"
+                        Padding="12"
+                        Margin="0,0,0,12"
+                        Visibility="{Binding ShowProfitWarning, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="{Binding ProfitWarningText}"
+                               Foreground="{StaticResource Brush.Warning}"
+                               TextWrapping="Wrap"
+                               FontSize="{StaticResource Font.Size.Body}" />
+                </Border>
+
+                <Grid Grid.Row="2" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource KpiCard}">
+                        <StackPanel>
+                            <TextBlock Text="Revenue" Style="{StaticResource Text.Caption}" />
+                            <TextBlock Text="{Binding RevenueDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="22" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource KpiCard}">
+                        <StackPanel>
+                            <TextBlock Text="Cost of goods" Style="{StaticResource Text.Caption}" />
+                            <TextBlock Text="{Binding CogsDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="22" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="4" Style="{StaticResource KpiCard}">
+                        <StackPanel>
+                            <TextBlock Text="Gross profit" Style="{StaticResource Text.Caption}" />
+                            <TextBlock Text="{Binding GrossProfitDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="22" Margin="0,4,0,0"
+                                       Foreground="{StaticResource Brush.Accent}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="6" Style="{StaticResource KpiCard}">
+                        <StackPanel>
+                            <TextBlock Text="Expenses" Style="{StaticResource Text.Caption}" />
+                            <TextBlock Text="{Binding ExpensesDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="22" Margin="0,4,0,0"
+                                       Foreground="{StaticResource Brush.Warning}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="8" Style="{StaticResource KpiCard}">
+                        <StackPanel>
+                            <TextBlock Text="NET PROFIT" Style="{StaticResource Text.Caption}" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding NetProfitDisplay}" FontSize="22" Margin="0,4,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource Text.NumericStrong}">
+                                        <Setter Property="Foreground" Value="{StaticResource Brush.Success}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding NetProfitIsNegative}" Value="True">
+                                                <Setter Property="Foreground" Value="{StaticResource Brush.Danger}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Border Grid.Row="3"
+                        Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.Border.Default}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Radius.Large}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Background="{StaticResource Brush.Surface.Sunken}"
+                                BorderBrush="{StaticResource Brush.Border.Default}"
+                                BorderThickness="0,0,0,1"
+                                CornerRadius="10,10,0,0"
+                                Padding="16,10">
+                            <TextBlock Text="Profit by product (sorted by profit, not revenue)" Style="{StaticResource Text.Label}" />
+                        </Border>
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding ProductProfit}"
+                                  Style="{StaticResource DataGrid.Default}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="*" />
+                                <DataGridTextColumn Header="Qty sold"
+                                                    Binding="{Binding QtySoldMilli, Converter={StaticResource MilliToUnitsConverter}}"
+                                                    Width="100"
+                                                    CellStyle="{StaticResource DataGrid.NumericCell}"
+                                                    HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                                <DataGridTextColumn Header="Revenue"
+                                                    Binding="{Binding RevenueCents, Converter={StaticResource CentsToShillingsConverter}}"
+                                                    Width="110"
+                                                    CellStyle="{StaticResource DataGrid.NumericCell}"
+                                                    HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                                <DataGridTextColumn Header="Cost"
+                                                    Binding="{Binding CostCents, Converter={StaticResource CentsToShillingsConverter}}"
+                                                    Width="110"
+                                                    CellStyle="{StaticResource DataGrid.NumericCell}"
+                                                    HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                                <DataGridTextColumn Header="Profit"
+                                                    Binding="{Binding ProfitCents, Converter={StaticResource CentsToShillingsConverter}}"
+                                                    Width="110"
+                                                    CellStyle="{StaticResource DataGrid.NumericCell}"
+                                                    HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                                <DataGridTextColumn Header="Margin %"
+                                                    Binding="{Binding MarginPercent, StringFormat='{}{0}%'}"
+                                                    Width="90"
+                                                    CellStyle="{StaticResource DataGrid.NumericCell}"
+                                                    HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- STOCK TAB -->
             <Grid Visibility="{Binding ActiveTab, Converter={StaticResource EqualsConverterToVisibility}, ConverterParameter=Stock}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -244,7 +413,7 @@
                 </Border>
             </Grid>
 
-            <!-- ============ DEBTORS TAB ============ -->
+            <!-- DEBTORS TAB -->
             <Grid Visibility="{Binding ActiveTab, Converter={StaticResource EqualsConverterToVisibility}, ConverterParameter=Debtors}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />

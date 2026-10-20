@@ -7,28 +7,14 @@ namespace Pos.Desktop.ViewModels;
 
 public partial class ReceiptLineViewModel : ObservableObject
 {
-    [ObservableProperty]
-    private ProductListItem? product;
-
-    /// <summary>Whole base units as typed (e.g. "10").</summary>
-    [ObservableProperty]
-    private string qtyText = "";
-
-    /// <summary>Unit cost in shillings, decimals allowed (e.g. "650" or "2.50").</summary>
-    [ObservableProperty]
-    private string unitCostText = "";
-
-    [ObservableProperty]
-    private string lineTotalDisplay = "0.00";
-
-    [ObservableProperty]
-    private string validationError = "";
+    [ObservableProperty] private ProductListItem? product;
+    [ObservableProperty] private bool unitAllowsDecimal = true;
+    [ObservableProperty] private string qtyText = "";
+    [ObservableProperty] private string unitCostText = "";
+    [ObservableProperty] private string lineTotalDisplay = "0.00";
+    [ObservableProperty] private string validationError = "";
 
     public event EventHandler? Changed;
-
-    partial void OnProductChanged(ProductListItem? value) => Recalculate();
-    partial void OnQtyTextChanged(string value) => Recalculate();
-    partial void OnUnitCostTextChanged(string value) => Recalculate();
 
     public long QtyMilli { get; private set; }
     public long UnitCostCents { get; private set; }
@@ -39,6 +25,11 @@ public partial class ReceiptLineViewModel : ObservableObject
         QtyMilli > 0 &&
         UnitCostCents >= 0 &&
         string.IsNullOrEmpty(ValidationError);
+
+    partial void OnProductChanged(ProductListItem? value) => Recalculate();
+    partial void OnUnitAllowsDecimalChanged(bool value) => Recalculate();
+    partial void OnQtyTextChanged(string value) => Recalculate();
+    partial void OnUnitCostTextChanged(string value) => Recalculate();
 
     private void Recalculate()
     {
@@ -54,14 +45,19 @@ public partial class ReceiptLineViewModel : ObservableObject
             return;
         }
 
-        if (!long.TryParse(QtyText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out long qtyWhole) || qtyWhole <= 0)
+        if (!Quantity.TryParse(QtyText, out Quantity qty, out string? qtyErr))
         {
-            ValidationError = "Quantity must be a positive whole number.";
+            ValidationError = qtyErr ?? "Invalid quantity.";
+            QtyMilli = 0;
+        }
+        else if (!UnitAllowsDecimal && !qty.IsWhole)
+        {
+            ValidationError = "This unit does not allow fractions — enter a whole number.";
             QtyMilli = 0;
         }
         else
         {
-            QtyMilli = qtyWhole * Quantity.MilliPerUnit;
+            QtyMilli = qty.Milli;
         }
 
         if (string.IsNullOrWhiteSpace(UnitCostText))
@@ -81,9 +77,7 @@ public partial class ReceiptLineViewModel : ObservableObject
             UnitCostCents = (long)decimal.Round(costShillings * 100m, 0, MidpointRounding.AwayFromZero);
         }
 
-        LineTotalCents = Money.RoundHalfUpDiv(
-            checked(UnitCostCents * QtyMilli),
-            Quantity.MilliPerUnit);
+        LineTotalCents = Money.RoundHalfUpDiv(checked(UnitCostCents * QtyMilli), Quantity.MilliPerUnit);
         LineTotalDisplay = new Money(LineTotalCents).ToString();
 
         Changed?.Invoke(this, EventArgs.Empty);

@@ -182,9 +182,14 @@ public partial class SellViewModel : ObservableObject
             return;
         }
 
-        if (!long.TryParse(QuantityText, out long qty) || qty <= 0)
+        if (!Pos.Domain.Quantity.TryParse(QuantityText, out Pos.Domain.Quantity qty, out string? qtyErr))
         {
-            ErrorMessage = "Quantity must be a positive whole number.";
+            ErrorMessage = qtyErr ?? "Invalid quantity.";
+            return;
+        }
+        if (qty.Milli <= 0)
+        {
+            ErrorMessage = "Quantity must be greater than zero.";
             return;
         }
 
@@ -201,19 +206,23 @@ public partial class SellViewModel : ObservableObject
         }
 
         Unit? baseUnit = await _units.GetByIdAsync(PickerProduct.BaseUnitId);
+        bool allowsDecimal = baseUnit?.AllowsDecimal ?? false;
+
+        if (!allowsDecimal && !qty.IsWhole)
+        {
+            ErrorMessage = $"'{PickerProduct.Name}' is sold by {baseUnit?.Name ?? "whole unit"} — enter a whole number.";
+            return;
+        }
 
         CartLineViewModel? existing = Lines.FirstOrDefault(l => l.ProductId == PickerProduct.Id);
         if (existing is not null)
         {
-            long newQty = (existing.QtyMilli / Pos.Domain.Quantity.MilliPerUnit) + qty;
-            existing.QtyText = newQty.ToString(CultureInfo.InvariantCulture);
+            existing.SetQuantityMilli(existing.QtyMilli + qty.Milli);
         }
         else
         {
-            CartLineViewModel line = new(PickerProduct, PickerProduct.BaseUnitId, baseUnit?.Name ?? "pc", unitPrice.Value)
-            {
-                QtyText = qty.ToString(CultureInfo.InvariantCulture),
-            };
+            CartLineViewModel line = new(PickerProduct, PickerProduct.BaseUnitId, baseUnit?.Name ?? "pc", unitPrice.Value, allowsDecimal);
+            line.SetQuantityMilli(qty.Milli);
             line.Changed += OnLineChanged;
             Lines.Add(line);
         }
@@ -402,3 +411,4 @@ public partial class SellViewModel : ObservableObject
 
     public sealed record PriceTierOption(int Id, string Name);
 }
+

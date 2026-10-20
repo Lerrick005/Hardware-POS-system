@@ -15,6 +15,7 @@ public partial class NewReceiptViewModel : ObservableObject
     private readonly IReceiveGoods _receiveGoods;
     private readonly IProductRepository _products;
     private readonly ISupplierRepository _suppliers;
+    private readonly IUnitRepository _units;
     private readonly IUserSession _session;
     private readonly ILogger<NewReceiptViewModel> _logger;
 
@@ -54,12 +55,14 @@ public partial class NewReceiptViewModel : ObservableObject
         IReceiveGoods receiveGoods,
         IProductRepository products,
         ISupplierRepository suppliers,
+        IUnitRepository units,
         IUserSession session,
         ILogger<NewReceiptViewModel> logger)
     {
         _receiveGoods = receiveGoods;
         _products = products;
         _suppliers = suppliers;
+        _units = units;
         _session = session;
         _logger = logger;
     }
@@ -119,7 +122,7 @@ public partial class NewReceiptViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void AddLine()
+    private async Task AddLineAsync()
     {
         if (PickerProduct is null)
         {
@@ -127,7 +130,13 @@ public partial class NewReceiptViewModel : ObservableObject
             return;
         }
 
-        ReceiptLineViewModel line = new() { Product = PickerProduct };
+        Pos.Domain.Catalog.Unit? baseUnit = await _units.GetByIdAsync(PickerProduct.BaseUnitId);
+
+        ReceiptLineViewModel line = new()
+        {
+            Product = PickerProduct,
+            UnitAllowsDecimal = baseUnit?.AllowsDecimal ?? false,
+        };
         line.Changed += OnLineChanged;
         Lines.Add(line);
 
@@ -224,3 +233,4 @@ public partial class NewReceiptViewModel : ObservableObject
         }
     }
 }
+

@@ -9,9 +9,9 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Header -->
             <Grid Grid.Row="0" Margin="0,0,0,24">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -32,7 +32,6 @@
                 </Button>
             </Grid>
 
-            <!-- SETUP STATE (new shop) -->
             <Border Grid.Row="1" Margin="0,0,0,20">
                 <Border.Style>
                     <Style TargetType="Border" BasedOn="{StaticResource Card}">
@@ -85,7 +84,7 @@
                                 Style="{StaticResource Button.Secondary}" Padding="12,6" />
                     </Grid>
 
-                    <Grid Margin="0,0,0,8">
+                    <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
@@ -104,8 +103,96 @@
                 </StackPanel>
             </Border>
 
-            <!-- TODAY'S NUMBERS (trading shop) -->
+            <!-- MONTH-TO-DATE PROFIT (visible when not in setup state) -->
             <Grid Grid.Row="2" Margin="0,0,0,20">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ShowSetupState}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="This month" Style="{StaticResource Text.Subtitle}" Margin="0,0,0,12" />
+
+                <Border Grid.Row="1"
+                        Style="{StaticResource Card}"
+                        Padding="20,16">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Revenue" Style="{StaticResource Text.Caption}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <TextBlock Text="{Binding MonthRevenueDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="22" />
+                                    <TextBlock Text=" KES" Style="{StaticResource Text.Body}" VerticalAlignment="Bottom" Margin="4,0,0,4"
+                                               Foreground="{StaticResource Brush.Text.Secondary}" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Expenses" Style="{StaticResource Text.Caption}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <TextBlock Text="{Binding MonthExpensesDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="22"
+                                               Foreground="{StaticResource Brush.Warning}" />
+                                    <TextBlock Text=" KES" Style="{StaticResource Text.Body}" VerticalAlignment="Bottom" Margin="4,0,0,4"
+                                               Foreground="{StaticResource Brush.Text.Secondary}" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="Net profit" Style="{StaticResource Text.Caption}" FontWeight="SemiBold" />
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <TextBlock Text="{Binding MonthNetProfitDisplay}" FontSize="22">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource Text.NumericStrong}">
+                                                <Setter Property="Foreground" Value="{StaticResource Brush.Success}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding MonthNetProfitIsNegative}" Value="True">
+                                                        <Setter Property="Foreground" Value="{StaticResource Brush.Danger}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Text=" KES" Style="{StaticResource Text.Body}" VerticalAlignment="Bottom" Margin="4,0,0,4"
+                                               Foreground="{StaticResource Brush.Text.Secondary}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Background="{StaticResource Brush.Warning.Subtle}"
+                                BorderBrush="{StaticResource Brush.Warning}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource Radius.Medium}"
+                                Padding="10"
+                                Margin="0,12,0,0"
+                                Visibility="{Binding ShowProfitWarning, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="{Binding ProfitWarningText}"
+                                       Foreground="{StaticResource Brush.Warning}"
+                                       TextWrapping="Wrap"
+                                       FontSize="{StaticResource Font.Size.Caption}" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- TODAY KPIs -->
+            <Grid Grid.Row="3" Margin="0,0,0,20">
                 <Grid.Style>
                     <Style TargetType="Grid">
                         <Setter Property="Visibility" Value="Visible" />
@@ -194,8 +281,7 @@
                 </Border>
             </Grid>
 
-            <!-- LOW STOCK LIST -->
-            <Border Grid.Row="3" Margin="0,0,0,20">
+            <Border Grid.Row="4" Margin="0,0,0,20">
                 <Border.Style>
                     <Style TargetType="Border" BasedOn="{StaticResource Card}">
                         <Setter Property="Visibility" Value="Visible" />
@@ -242,8 +328,7 @@
                 </StackPanel>
             </Border>
 
-            <!-- QUICK ACTIONS -->
-            <Grid Grid.Row="4">
+            <Grid Grid.Row="5">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="12" />

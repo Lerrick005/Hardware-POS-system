@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using Pos.Application.Catalog;
+using Pos.Domain;
 
 namespace Pos.Desktop.ViewModels;
 
@@ -7,12 +8,13 @@ public partial class CartLineViewModel : ObservableObject
 {
     private long _unitPriceCents;
 
-    public CartLineViewModel(ProductListItem product, int unitId, string unitName, long unitPriceCents)
+    public CartLineViewModel(ProductListItem product, int unitId, string unitName, long unitPriceCents, bool unitAllowsDecimal)
     {
         ProductId = product.Id;
         ProductName = product.Name;
         UnitId = unitId;
         UnitName = unitName;
+        UnitAllowsDecimal = unitAllowsDecimal;
         _unitPriceCents = unitPriceCents;
         UnitPriceText = (unitPriceCents / 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
     }
@@ -21,21 +23,13 @@ public partial class CartLineViewModel : ObservableObject
     public string ProductName { get; }
     public int UnitId { get; }
     public string UnitName { get; }
+    public bool UnitAllowsDecimal { get; }
 
-    [ObservableProperty]
-    private string qtyText = "1";
-
-    [ObservableProperty]
-    private string unitPriceText = "";
-
-    [ObservableProperty]
-    private string discountText = "";
-
-    [ObservableProperty]
-    private string lineTotalDisplay = "0.00";
-
-    [ObservableProperty]
-    private string validationError = "";
+    [ObservableProperty] private string qtyText = "1";
+    [ObservableProperty] private string unitPriceText = "";
+    [ObservableProperty] private string discountText = "";
+    [ObservableProperty] private string lineTotalDisplay = "0.00";
+    [ObservableProperty] private string validationError = "";
 
     public event EventHandler? Changed;
 
@@ -56,13 +50,18 @@ public partial class CartLineViewModel : ObservableObject
         Recalculate();
     }
 
+    public void SetQuantityMilli(long milli)
+    {
+        QtyText = (milli / (decimal)Quantity.MilliPerUnit).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
     private void Recalculate()
     {
         ValidationError = "";
 
-        if (!long.TryParse(QtyText?.Trim(), out long qtyWhole) || qtyWhole <= 0)
+        if (!Quantity.TryParse(QtyText, out Quantity qty, out string? qtyErr))
         {
-            ValidationError = "Quantity must be positive.";
+            ValidationError = qtyErr ?? "Invalid quantity.";
             QtyMilli = 0;
             DiscountCents = 0;
             LineTotalCents = 0;
@@ -70,7 +69,19 @@ public partial class CartLineViewModel : ObservableObject
             Changed?.Invoke(this, EventArgs.Empty);
             return;
         }
-        QtyMilli = qtyWhole * Pos.Domain.Quantity.MilliPerUnit;
+
+        if (!UnitAllowsDecimal && !qty.IsWhole)
+        {
+            ValidationError = $"'{ProductName}' is sold by {UnitName} — enter a whole number.";
+            QtyMilli = 0;
+            DiscountCents = 0;
+            LineTotalCents = 0;
+            LineTotalDisplay = "0.00";
+            Changed?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
+        QtyMilli = qty.Milli;
 
         long discountCents = 0;
         string d = (DiscountText ?? "").Trim();
@@ -90,8 +101,7 @@ public partial class CartLineViewModel : ObservableObject
         }
         DiscountCents = discountCents;
 
-        long gross = Pos.Domain.Money.RoundHalfUpDiv(
-            checked(_unitPriceCents * QtyMilli), Pos.Domain.Quantity.MilliPerUnit);
+        long gross = Money.RoundHalfUpDiv(checked(_unitPriceCents * QtyMilli), Quantity.MilliPerUnit);
         long net = gross - discountCents;
 
         if (net < 0)
@@ -104,7 +114,7 @@ public partial class CartLineViewModel : ObservableObject
         }
 
         LineTotalCents = net;
-        LineTotalDisplay = new Pos.Domain.Money(net).ToString();
+        LineTotalDisplay = new Money(net).ToString();
         Changed?.Invoke(this, EventArgs.Empty);
     }
 }

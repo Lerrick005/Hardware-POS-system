@@ -4,46 +4,53 @@
                     xmlns:conv="clr-namespace:Pos.Desktop.Converters">
 
     <!-- =====================================================================
-         POS DESIGN SYSTEM - TOKENS (v2: accessibility pass)
-         All text colors meet WCAG AA (4.5:1) against the surfaces they sit on.
-         Base body size raised to 14pt for shop-floor readability.
+         HARDWARE POS - INDUSTRIAL PALETTE
+         Colors drawn from the physical world of hardware stores:
+         cement, timber, steel, rust, safety orange, forest green.
          ===================================================================== -->
 
     <!-- ========== FONTS ========== -->
     <FontFamily x:Key="Font.UI">Segoe UI Variable Text, Segoe UI</FontFamily>
-    <FontFamily x:Key="Font.Display">Segoe UI Variable Display, Segoe UI</FontFamily>
+    <FontFamily x:Key="Font.Display">Bahnschrift SemiCondensed, Segoe UI Variable Display, Segoe UI</FontFamily>
     <FontFamily x:Key="Font.Mono">Cascadia Mono, Consolas, Courier New</FontFamily>
 
-    <!-- ========== PALETTE (semantic) ========== -->
-    <Color x:Key="Color.Canvas">#F8FAFC</Color>
+    <!-- ========== PALETTE ========== -->
+    <!-- Warm neutral surfaces - concrete/paper/cement -->
+    <Color x:Key="Color.Canvas">#F5F3EE</Color>
     <Color x:Key="Color.Surface">#FFFFFF</Color>
-    <Color x:Key="Color.Surface.Sunken">#F1F5F9</Color>
-    <Color x:Key="Color.Surface.Hover">#F1F5F9</Color>
-    <Color x:Key="Color.Surface.Pressed">#E2E8F0</Color>
+    <Color x:Key="Color.Surface.Sunken">#EBE7DE</Color>
+    <Color x:Key="Color.Surface.Hover">#F0EDE6</Color>
+    <Color x:Key="Color.Surface.Pressed">#DED9CD</Color>
 
-    <Color x:Key="Color.Border.Default">#E2E8F0</Color>
-    <Color x:Key="Color.Border.Strong">#94A3B8</Color>
+    <Color x:Key="Color.Border.Default">#D8D3C7</Color>
+    <Color x:Key="Color.Border.Strong">#8C8578</Color>
 
-    <!-- Text: darkened for readability. Tertiary now 4.9:1 on white. -->
-    <Color x:Key="Color.Text.Primary">#0F172A</Color>
-    <Color x:Key="Color.Text.Secondary">#334155</Color>
-    <Color x:Key="Color.Text.Tertiary">#64748B</Color>
+    <!-- Ink on paper -->
+    <Color x:Key="Color.Text.Primary">#1A1A1A</Color>
+    <Color x:Key="Color.Text.Secondary">#4A4540</Color>
+    <Color x:Key="Color.Text.Tertiary">#6B6558</Color>
     <Color x:Key="Color.Text.OnAccent">#FFFFFF</Color>
 
-    <Color x:Key="Color.Accent">#0F766E</Color>
-    <Color x:Key="Color.Accent.Hover">#0D9488</Color>
-    <Color x:Key="Color.Accent.Pressed">#115E59</Color>
-    <Color x:Key="Color.Accent.Subtle">#CCFBF1</Color>
-    <Color x:Key="Color.Accent.SubtleHover">#99F6E4</Color>
+    <!-- Industrial safety orange - the hardware signature color -->
+    <Color x:Key="Color.Accent">#C2410C</Color>
+    <Color x:Key="Color.Accent.Hover">#EA580C</Color>
+    <Color x:Key="Color.Accent.Pressed">#9A3412</Color>
+    <Color x:Key="Color.Accent.Subtle">#FFEDD5</Color>
+    <Color x:Key="Color.Accent.SubtleHover">#FED7AA</Color>
 
-    <Color x:Key="Color.Success">#047857</Color>
-    <Color x:Key="Color.Success.Subtle">#D1FAE5</Color>
+    <!-- Money green for profit/positive states -->
+    <Color x:Key="Color.Success">#15803D</Color>
+    <Color x:Key="Color.Success.Subtle">#DCFCE7</Color>
+
+    <!-- Danger red - safety red -->
     <Color x:Key="Color.Danger">#B91C1C</Color>
     <Color x:Key="Color.Danger.Subtle">#FEE2E2</Color>
-    <Color x:Key="Color.Warning">#B45309</Color>
+
+    <!-- Amber warning - burnt yellow like old warning tape -->
+    <Color x:Key="Color.Warning">#A16207</Color>
     <Color x:Key="Color.Warning.Subtle">#FEF3C7</Color>
 
-    <Color x:Key="Color.Focus">#0D9488</Color>
+    <Color x:Key="Color.Focus">#EA580C</Color>
 
     <!-- ========== BRUSHES ========== -->
     <SolidColorBrush x:Key="Brush.Canvas" Color="{StaticResource Color.Canvas}" />
@@ -70,18 +77,18 @@
     <SolidColorBrush x:Key="Brush.Warning.Subtle" Color="{StaticResource Color.Warning.Subtle}" />
     <SolidColorBrush x:Key="Brush.Focus" Color="{StaticResource Color.Focus}" />
 
-    <!-- ========== TYPE SCALE (bumped for readability) ========== -->
+    <!-- ========== TYPE SCALE ========== -->
     <sys:Double x:Key="Font.Size.Caption">13</sys:Double>
     <sys:Double x:Key="Font.Size.Micro">13</sys:Double>
     <sys:Double x:Key="Font.Size.Body">14</sys:Double>
     <sys:Double x:Key="Font.Size.BodyLarge">15</sys:Double>
     <sys:Double x:Key="Font.Size.Subtitle">17</sys:Double>
     <sys:Double x:Key="Font.Size.Title">22</sys:Double>
-    <sys:Double x:Key="Font.Size.Display">28</sys:Double>
+    <sys:Double x:Key="Font.Size.Display">30</sys:Double>
     <sys:Double x:Key="Font.Size.Numeric">14</sys:Double>
     <sys:Double x:Key="Font.Size.NumericLarge">17</sys:Double>
 
-    <!-- ========== SPACING (4-based) ========== -->
+    <!-- ========== SPACING ========== -->
     <sys:Double x:Key="Space.1">4</sys:Double>
     <sys:Double x:Key="Space.2">8</sys:Double>
     <sys:Double x:Key="Space.3">12</sys:Double>
@@ -105,16 +112,16 @@
 
     <!-- ========== ELEVATION ========== -->
     <DropShadowEffect x:Key="Shadow.1"
-                      Color="#0F172A" BlurRadius="4" ShadowDepth="1"
-                      Direction="270" Opacity="0.06" RenderingBias="Performance" />
-    <DropShadowEffect x:Key="Shadow.2"
-                      Color="#0F172A" BlurRadius="8" ShadowDepth="2"
+                      Color="#3D3630" BlurRadius="4" ShadowDepth="1"
                       Direction="270" Opacity="0.08" RenderingBias="Performance" />
+    <DropShadowEffect x:Key="Shadow.2"
+                      Color="#3D3630" BlurRadius="8" ShadowDepth="2"
+                      Direction="270" Opacity="0.10" RenderingBias="Performance" />
     <DropShadowEffect x:Key="Shadow.3"
-                      Color="#0F172A" BlurRadius="24" ShadowDepth="8"
-                      Direction="270" Opacity="0.14" RenderingBias="Performance" />
+                      Color="#3D3630" BlurRadius="24" ShadowDepth="8"
+                      Direction="270" Opacity="0.16" RenderingBias="Performance" />
 
-    <!-- ========== COMPONENT SIZES (bumped for touch + readability) ========== -->
+    <!-- ========== COMPONENT SIZES ========== -->
     <sys:Double x:Key="Control.Height.Small">32</sys:Double>
     <sys:Double x:Key="Control.Height.Medium">36</sys:Double>
     <sys:Double x:Key="Control.Height.Large">44</sys:Double>
@@ -156,7 +163,7 @@
     <Style x:Key="Text.Title" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource Font.Display}" />
         <Setter Property="FontSize" Value="{StaticResource Font.Size.Title}" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}" />
     </Style>
 
@@ -176,7 +183,7 @@
     </Style>
 
     <Style x:Key="Text.NumericStrong" TargetType="TextBlock" BasedOn="{StaticResource Text.Numeric}">
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="FontSize" Value="{StaticResource Font.Size.NumericLarge}" />
     </Style>
 
@@ -196,7 +203,7 @@
     <sys:Double x:Key="FontSizeBody">14</sys:Double>
     <sys:Double x:Key="FontSizeSubtitle">17</sys:Double>
     <sys:Double x:Key="FontSizeTitle">22</sys:Double>
-    <sys:Double x:Key="FontSizeDisplay">28</sys:Double>
+    <sys:Double x:Key="FontSizeDisplay">30</sys:Double>
 
     <Thickness x:Key="PaddingSmall">8</Thickness>
     <Thickness x:Key="PaddingMedium">16</Thickness>
@@ -220,7 +227,3 @@
     <conv:CentsToShillingsConverter x:Key="CentsToShillingsConverter" />
     <conv:EqualsConverterToVisibility x:Key="EqualsConverterToVisibility" />
 </ResourceDictionary>
-
-
-
-
