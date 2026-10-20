@@ -8,6 +8,7 @@ using Pos.Application.Sales;
 using Pos.Application.Settings;
 using Pos.Application.Stock;
 using Pos.Application.Suppliers;
+using Pos.Application.Users;
 using Pos.Desktop.ViewModels;
 using Pos.Desktop.Views;
 using Pos.Infrastructure.Catalog;
@@ -19,6 +20,7 @@ using Pos.Infrastructure.Sales;
 using Pos.Infrastructure.Settings;
 using Pos.Infrastructure.Stock;
 using Pos.Infrastructure.Suppliers;
+using Pos.Infrastructure.Users;
 using Serilog;
 
 namespace Pos.Desktop;
@@ -49,6 +51,10 @@ public partial class App : System.Windows.Application
         services.AddSingleton<BackupService>();
         services.AddSingleton<MigrationRunner>();
 
+        services.AddSingleton<IPinHasher, PinHasher>();
+        services.AddSingleton<IUserRepository, UserRepository>();
+        services.AddSingleton<IUserSession, UserSession>();
+
         services.AddSingleton<IProductRepository, ProductRepository>();
         services.AddSingleton<IUnitRepository, UnitRepository>();
         services.AddSingleton<ICategoryRepository, CategoryRepository>();
@@ -63,6 +69,7 @@ public partial class App : System.Windows.Application
         services.AddSingleton<IDashboardQuery, DashboardQuery>();
         services.AddSingleton<ISettingsService, SettingsService>();
 
+        services.AddSingleton<LoginViewModel>();
         services.AddSingleton<DashboardViewModel>();
         services.AddSingleton<ProductsViewModel>();
         services.AddSingleton<ReceiveGoodsViewModel>();
@@ -89,6 +96,52 @@ public partial class App : System.Windows.Application
         services.AddSingleton<MainWindow>();
 
         _services = services.BuildServiceProvider();
+
+        MigrationRunner runner = _services.GetRequiredService<MigrationRunner>();
+        MigrationResult migration = runner.Run();
+        Log.Information(
+            "Migration outcome: {Outcome}, from {From} to {To}, backup={Backup}",
+            migration.Outcome, migration.FromVersion, migration.ToVersion, migration.BackupPath ?? "none");
+
+        if (migration.Outcome == MigrationOutcome.Failed)
+        {
+            Log.Error("Migration failed: {Error}", migration.Error);
+            MessageBox.Show(
+                $"Database could not be prepared: {migration.Error}",
+                "MyPOS", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(1);
+            return;
+        }
+
+        SeedDefaultCashier(_services.GetRequiredService<DbConnectionFactory>());
+
+        IUserSession session = _services.GetRequiredService<IUserSession>();
+        LoginViewModel loginVm = _services.GetRequiredService<LoginViewModel>();
+        LoginView loginView = new(loginVm);
+        bool? loginResult = loginView.ShowDialog();
+
+        if (loginResult != true || !session.IsLoggedIn)
+        {
+            Log.Information("Login not completed; shutting down.");
+            Shutdown(0);
+            return;
+        }
+
+        Log.Information("User logged in: {Name} ({Role})", session.CurrentUserName, session.CurrentUserRole);
+
+        WireDialogFactories();
+
+        MainWindowViewModel mainVm = _services.GetRequiredService<MainWindowViewModel>();
+        mainVm.UserLabel = $"{session.CurrentUserName} ({session.CurrentUserRole})";
+
+        MainWindow window = _services.GetRequiredService<MainWindow>();
+        MainWindow = window;
+        window.Show();
+    }
+
+    private void WireDialogFactories()
+    {
+        if (_services is null) return;
 
         ProductsViewModel productsVm = _services.GetRequiredService<ProductsViewModel>();
         productsVm.CreateProductDialog = (int? productId) =>
@@ -167,28 +220,6 @@ public partial class App : System.Windows.Application
         dashVm.NavigateToProducts = () => mainVm.ShowProductsCommand.Execute(null);
         dashVm.NavigateToCustomers = () => mainVm.ShowCustomersCommand.Execute(null);
         dashVm.NavigateToReports = () => mainVm.ShowReportsCommand.Execute(null);
-
-        MigrationRunner runner = _services.GetRequiredService<MigrationRunner>();
-        MigrationResult migration = runner.Run();
-        Log.Information(
-            "Migration outcome: {Outcome}, from {From} to {To}, backup={Backup}",
-            migration.Outcome, migration.FromVersion, migration.ToVersion, migration.BackupPath ?? "none");
-
-        if (migration.Outcome == MigrationOutcome.Failed)
-        {
-            Log.Error("Migration failed: {Error}", migration.Error);
-            MessageBox.Show(
-                $"Database could not be prepared: {migration.Error}",
-                "MyPOS", MessageBoxButton.OK, MessageBoxImage.Error);
-            Shutdown(1);
-            return;
-        }
-
-        SeedDefaultCashier(_services.GetRequiredService<DbConnectionFactory>());
-
-        MainWindow window = _services.GetRequiredService<MainWindow>();
-        MainWindow = window;
-        window.Show();
     }
 
     private static void SeedDefaultCashier(DbConnectionFactory factory)
@@ -204,7 +235,7 @@ public partial class App : System.Windows.Application
         using var seedCmd = connection.CreateCommand();
         seedCmd.CommandText = "INSERT INTO users(name, role, pin_hash) VALUES ('Cashier', 'CASHIER', 'PIN_NOT_SET')";
         seedCmd.ExecuteNonQuery();
-        Log.Warning("Seeded default Cashier user - login screen is not yet built.");
+        Log.Warning("Seeded default Cashier user - will ask for PIN on first login.");
     }
 
     protected override void OnExit(ExitEventArgs e)

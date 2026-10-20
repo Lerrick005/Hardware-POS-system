@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Pos.Application.Catalog;
 using Pos.Application.Customers;
+using Pos.Application.Users;
 using Pos.Domain.Catalog;
 using Pos.Domain.Customers;
 
@@ -14,6 +15,7 @@ public partial class AddCustomerViewModel : ObservableObject
 {
     private readonly ICustomerRepository _customers;
     private readonly IPriceTierRepository _tiers;
+    private readonly IUserSession _session;
     private readonly ILogger<AddCustomerViewModel> _logger;
 
     [ObservableProperty]
@@ -60,10 +62,12 @@ public partial class AddCustomerViewModel : ObservableObject
     public AddCustomerViewModel(
         ICustomerRepository customers,
         IPriceTierRepository tiers,
+        IUserSession session,
         ILogger<AddCustomerViewModel> logger)
     {
         _customers = customers;
         _tiers = tiers;
+        _session = session;
         _logger = logger;
     }
 
@@ -166,7 +170,11 @@ public partial class AddCustomerViewModel : ObservableObject
                 };
 
                 string today = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                int id = await _customers.InsertWithOpeningBalanceAsync(customer, openingBalanceCents, today);
+                int id = await _customers.InsertWithOpeningBalanceAsync(
+                    customer,
+                    openingBalanceCents,
+                    today,
+                    userId: _session.RequireUserId);
                 Saved?.Invoke(this, id);
             }
         }

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Pos.Application.Catalog;
 using Pos.Application.Customers;
 using Pos.Application.Sales;
+using Pos.Application.Users;
 using Pos.Desktop.Views;
 using Pos.Domain.Catalog;
 
@@ -18,6 +19,7 @@ public partial class SellViewModel : ObservableObject
     private readonly IPriceTierRepository _tiers;
     private readonly ICustomerRepository _customers;
     private readonly ISellService _sellService;
+    private readonly IUserSession _session;
     private readonly ILogger<SellViewModel> _logger;
 
     private CancellationTokenSource? _searchCts;
@@ -60,6 +62,7 @@ public partial class SellViewModel : ObservableObject
         IPriceTierRepository tiers,
         ICustomerRepository customers,
         ISellService sellService,
+        IUserSession session,
         ILogger<SellViewModel> logger)
     {
         _products = products;
@@ -67,6 +70,7 @@ public partial class SellViewModel : ObservableObject
         _tiers = tiers;
         _customers = customers;
         _sellService = sellService;
+        _session = session;
         _logger = logger;
 
         Payments.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasMultiplePayments));
@@ -84,16 +88,14 @@ public partial class SellViewModel : ObservableObject
         SelectedPriceTierId = defaultTier.Id;
 
         IReadOnlyList<CustomerListItem> customerList = await _customers.ListAsync(includeInactive: false);
-        
+
         Customers.Clear();
-        // Add the Walk-in Customer as the first option (Id = 0)
         Customers.Add(new CustomerListItem { Id = 0, Name = "< Walk-in Customer >", BalanceCents = 0 });
         foreach (CustomerListItem c in customerList)
         {
             Customers.Add(c);
         }
-        
-        // Default to Walk-in
+
         SelectedCustomer = Customers[0];
 
         ResetPaymentsForCash();
@@ -111,7 +113,6 @@ public partial class SellViewModel : ObservableObject
 
     partial void OnSelectedCustomerChanged(CustomerListItem? value)
     {
-        // If a real customer is picked (not Walk-in), and they have a default tier, switch to it.
         if (value is not null && value.Id > 0 && value.PriceTierId is not null)
         {
             SelectedPriceTierId = value.PriceTierId;
@@ -323,7 +324,6 @@ public partial class SellViewModel : ObservableObject
             return;
         }
 
-        // Credit validation
         bool hasCredit = Payments.Any(p => p.MethodCode == "CREDIT" && p.AmountCents > 0);
         int? customerId = SelectedCustomer?.Id == 0 ? null : SelectedCustomer?.Id;
 
@@ -360,7 +360,7 @@ public partial class SellViewModel : ObservableObject
                 BusinessDate: DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 Lines: lineReqs,
                 Payments: payReqs,
-                UserId: 1,
+                UserId: _session.RequireUserId,
                 CashSessionId: null);
 
             SaleResult result = await _sellService.CompleteSaleAsync(request);
@@ -395,7 +395,7 @@ public partial class SellViewModel : ObservableObject
         foreach (CartLineViewModel l in Lines) l.Changed -= OnLineChanged;
         Lines.Clear();
         ResetPaymentsForCash();
-        SelectedCustomer = Customers.FirstOrDefault(); // Reset to Walk-in
+        SelectedCustomer = Customers.FirstOrDefault();
         ErrorMessage = "";
         Recalculate();
     }

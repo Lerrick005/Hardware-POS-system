@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Pos.Application.Customers;
+using Pos.Application.Users;
 using Pos.Domain.Customers;
 
 namespace Pos.Desktop.ViewModels;
@@ -13,6 +14,7 @@ public partial class RecordPaymentViewModel : ObservableObject
 
     private readonly ICustomerRepository _customers;
     private readonly ICustomerAccountService _account;
+    private readonly IUserSession _session;
     private readonly ILogger<RecordPaymentViewModel> _logger;
 
     [ObservableProperty]
@@ -60,10 +62,12 @@ public partial class RecordPaymentViewModel : ObservableObject
     public RecordPaymentViewModel(
         ICustomerRepository customers,
         ICustomerAccountService account,
+        IUserSession session,
         ILogger<RecordPaymentViewModel> logger)
     {
         _customers = customers;
         _account = account;
+        _session = session;
         _logger = logger;
     }
 
@@ -121,7 +125,7 @@ public partial class RecordPaymentViewModel : ObservableObject
                 Reference: string.IsNullOrWhiteSpace(Reference) ? null : Reference.Trim(),
                 Notes: string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
                 BusinessDate: DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                UserId: null,
+                UserId: _session.RequireUserId,
                 CashSessionId: null));
 
             Saved?.Invoke(this, result.NewBalanceCents);

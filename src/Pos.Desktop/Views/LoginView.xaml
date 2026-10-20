@@ -1,0 +1,169 @@
+﻿<Window x:Class="Pos.Desktop.Views.LoginView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MyPOS — Sign in" Height="560" Width="480"
+        MinHeight="500" MinWidth="420"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize"
+        WindowStyle="SingleBorderWindow"
+        Background="{StaticResource Brush.Canvas}"
+        FontFamily="Segoe UI">
+    <Grid Margin="32,28,32,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ===== Header ===== -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,24">
+            <TextBlock Text="MyPOS" Style="{StaticResource Text.Display}" HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding HeadingText}"
+                       Style="{StaticResource Text.Subtitle}"
+                       HorizontalAlignment="Center"
+                       Margin="0,16,0,4" />
+            <TextBlock Text="{Binding SubheadingText}"
+                       Style="{StaticResource Text.Caption}"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap" />
+        </StackPanel>
+
+        <!-- ===== Main content: staff picker OR PIN entry ===== -->
+        <Grid Grid.Row="1">
+
+            <!-- ===== Staff picker (no selection yet) ===== -->
+            <StackPanel Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}">
+                <ItemsControl ItemsSource="{Binding Staff}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Command="{Binding DataContext.SelectStaffCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    CommandParameter="{Binding}"
+                                    Style="{StaticResource Button.Secondary}"
+                                    Height="56"
+                                    Margin="0,0,0,8"
+                                    HorizontalContentAlignment="Stretch"
+                                    Padding="16,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding Name}"
+                                               Style="{StaticResource Text.BodyLarge}"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Role}"
+                                               Style="{StaticResource Text.Caption}"
+                                               VerticalAlignment="Center" />
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="{Binding StatusText}"
+                           Style="{StaticResource Text.Caption}"
+                           HorizontalAlignment="Center"
+                           Margin="0,12,0,0" />
+            </StackPanel>
+
+            <!-- ===== PIN entry (after staff selected) ===== -->
+            <StackPanel Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibilityConverter}}">
+                <!-- PIN entry field -->
+                <TextBlock Text="PIN" Style="{StaticResource Text.Label}" HorizontalAlignment="Center" />
+                <PasswordBox x:Name="PinBox"
+                             PasswordChanged="OnPinChanged"
+                             Width="200"
+                             Height="56"
+                             Margin="0,8,0,0"
+                             HorizontalAlignment="Center"
+                             Padding="12,0"
+                             FontSize="24"
+                             FontWeight="SemiBold"
+                             Background="{StaticResource Brush.Surface}"
+                             BorderBrush="{StaticResource Brush.Border.Default}"
+                             BorderThickness="1" />
+
+                <!-- Confirm PIN field (only shown when setting up a new PIN) -->
+                <StackPanel Visibility="{Binding NeedsPinSetup, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="Confirm PIN"
+                               Style="{StaticResource Text.Label}"
+                               HorizontalAlignment="Center"
+                               Margin="0,16,0,0" />
+                    <PasswordBox x:Name="PinConfirmBox"
+                                 PasswordChanged="OnPinConfirmChanged"
+                                 Width="200"
+                                 Height="56"
+                                 Margin="0,8,0,0"
+                                 HorizontalAlignment="Center"
+                                 Padding="12,0"
+                                 FontSize="24"
+                                 FontWeight="SemiBold"
+                                 Background="{StaticResource Brush.Surface}"
+                                 BorderBrush="{StaticResource Brush.Border.Default}"
+                                 BorderThickness="1" />
+                </StackPanel>
+
+                <!-- Back link -->
+                <Button Content="← Choose a different person"
+                        Command="{Binding BackCommand}"
+                        Style="{StaticResource Button.Ghost}"
+                        HorizontalAlignment="Center"
+                        Padding="12,6"
+                        Margin="0,20,0,0"
+                        Foreground="{StaticResource Brush.Text.Secondary}" />
+            </StackPanel>
+        </Grid>
+
+        <!-- ===== Footer ===== -->
+        <Grid Grid.Row="2" Margin="0,20,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Error banner -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource Brush.Danger.Subtle}"
+                    BorderBrush="{StaticResource Brush.Danger}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource Radius.Medium}"
+                    Padding="12"
+                    Margin="0,0,0,12"
+                    Visibility="{Binding ErrorMessage, Converter={StaticResource EmptyStringToCollapsedConverter}}">
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="{StaticResource Brush.Danger}"
+                           TextWrapping="Wrap"
+                           FontSize="{StaticResource Font.Size.Body}" />
+            </Border>
+
+            <!-- Buttons -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0"
+                        Content="Quit"
+                        Click="OnQuit"
+                        Style="{StaticResource Button.Ghost}"
+                        Padding="12,8"
+                        Foreground="{StaticResource Brush.Text.Secondary}" />
+
+                <Button Grid.Column="2"
+                        Content="{Binding ActionButtonText}"
+                        Command="{Binding SubmitCommand}"
+                        Style="{StaticResource Button.Primary.Large}"
+                        Padding="24,0"
+                        MinWidth="160"
+                        IsDefault="True"
+                        IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}" />
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

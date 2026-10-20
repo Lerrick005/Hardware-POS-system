@@ -4,6 +4,8 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Pos.Application.Catalog;
 using Pos.Application.Stock;
+using Pos.Application.Suppliers;
+using Pos.Application.Users;
 using Pos.Domain;
 
 namespace Pos.Desktop.ViewModels;
@@ -12,10 +14,15 @@ public partial class NewReceiptViewModel : ObservableObject
 {
     private readonly IReceiveGoods _receiveGoods;
     private readonly IProductRepository _products;
+    private readonly ISupplierRepository _suppliers;
+    private readonly IUserSession _session;
     private readonly ILogger<NewReceiptViewModel> _logger;
 
     [ObservableProperty]
     private string businessDate = DateTime.Today.ToString("yyyy-MM-dd");
+
+    [ObservableProperty]
+    private SupplierListItem? selectedSupplier;
 
     [ObservableProperty]
     private string supplierRef = "";
@@ -37,6 +44,7 @@ public partial class NewReceiptViewModel : ObservableObject
 
     public ObservableCollection<ReceiptLineViewModel> Lines { get; } = new();
     public ObservableCollection<ProductListItem> PickerResults { get; } = new();
+    public ObservableCollection<SupplierListItem> Suppliers { get; } = new();
 
     public event EventHandler<int>? Saved;
 
@@ -45,15 +53,27 @@ public partial class NewReceiptViewModel : ObservableObject
     public NewReceiptViewModel(
         IReceiveGoods receiveGoods,
         IProductRepository products,
+        ISupplierRepository suppliers,
+        IUserSession session,
         ILogger<NewReceiptViewModel> logger)
     {
         _receiveGoods = receiveGoods;
         _products = products;
+        _suppliers = suppliers;
+        _session = session;
         _logger = logger;
     }
 
     public async Task LoadAsync()
     {
+        IReadOnlyList<SupplierListItem> supplierList = await _suppliers.ListAsync(includeInactive: false);
+        Suppliers.Clear();
+        foreach (SupplierListItem s in supplierList)
+        {
+            Suppliers.Add(s);
+        }
+        SelectedSupplier = Suppliers.FirstOrDefault();
+
         await RunPickerSearchAsync("");
     }
 
@@ -72,10 +92,7 @@ public partial class NewReceiptViewModel : ObservableObject
             await Task.Delay(200, ct);
             await RunPickerSearchAsync(term, ct);
         }
-        catch (OperationCanceledException)
-        {
-            // superseded
-        }
+        catch (OperationCanceledException) { }
     }
 
     private async Task RunPickerSearchAsync(string term, CancellationToken ct = default)
@@ -86,10 +103,7 @@ public partial class NewReceiptViewModel : ObservableObject
                 ? await _products.ListAsync(includeInactive: false, ct)
                 : await _products.SearchAsync(term, limit: 50, ct);
 
-            if (ct.IsCancellationRequested)
-            {
-                return;
-            }
+            if (ct.IsCancellationRequested) return;
 
             PickerResults.Clear();
             foreach (ProductListItem p in items)
@@ -97,10 +111,7 @@ public partial class NewReceiptViewModel : ObservableObject
                 PickerResults.Add(p);
             }
         }
-        catch (OperationCanceledException)
-        {
-            // superseded
-        }
+        catch (OperationCanceledException) { }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Picker search failed for {Term}", term);
@@ -129,11 +140,7 @@ public partial class NewReceiptViewModel : ObservableObject
     [RelayCommand]
     private void RemoveLine(ReceiptLineViewModel? line)
     {
-        if (line is null)
-        {
-            return;
-        }
-
+        if (line is null) return;
         line.Changed -= OnLineChanged;
         Lines.Remove(line);
         RecalculateTotal();
@@ -148,7 +155,6 @@ public partial class NewReceiptViewModel : ObservableObject
         {
             totalCents = checked(totalCents + line.LineTotalCents);
         }
-
         TotalDisplay = new Money(totalCents).ToString();
     }
 
@@ -198,11 +204,11 @@ public partial class NewReceiptViewModel : ObservableObject
                 .ToArray();
 
             ReceiveGoodsRequest request = new(
-                SupplierId: null,
+                SupplierId: SelectedSupplier?.Id,
                 SupplierRef: string.IsNullOrWhiteSpace(SupplierRef) ? null : SupplierRef.Trim(),
                 BusinessDate: BusinessDate,
                 Lines: requestLines,
-                UserId: null);
+                UserId: _session.RequireUserId);
 
             ReceiveGoodsResult result = await _receiveGoods.ExecuteAsync(request);
             Saved?.Invoke(this, result.ReceiptId);
