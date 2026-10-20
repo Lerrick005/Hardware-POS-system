@@ -26,8 +26,10 @@
     <EmbeddedResource Include="..\..\pos_schema.sql" LogicalName="Pos.Infrastructure.Migrations.001_baseline.sql" />
     <EmbeddedResource Include="Data\Migrations\002_admin_promotion.sql" LogicalName="Pos.Infrastructure.Migrations.002_admin_promotion.sql" />
     <EmbeddedResource Include="Data\Migrations\003_expenses.sql" LogicalName="Pos.Infrastructure.Migrations.003_expenses.sql" />
+    <EmbeddedResource Include="Data\Migrations\004_multi_unit_pricing.sql" LogicalName="Pos.Infrastructure.Migrations.004_multi_unit_pricing.sql" />
   </ItemGroup>
 </Project>
+
 
 
 

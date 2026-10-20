@@ -41,7 +41,9 @@ public sealed class CashSessionServiceTests : IDisposable
             INSERT INTO products(uuid, name, base_unit_id, avg_cost_cents, stock_milli, is_active)
             VALUES ($uuid, 'Test Item', 1, 5000, 100000, 1) RETURNING id",
             new { uuid = Guid.NewGuid().ToString("N") });
-        c.Execute("INSERT INTO product_prices(product_id, tier_id, price_cents) VALUES ($id, 1, 10000)",
+        c.Execute(@"
+            INSERT INTO product_prices(product_id, tier_id, unit_id, price_cents)
+            VALUES ($id, 1, 1, 10000)",
             new { id });
         return id;
     }
@@ -288,3 +290,4 @@ public sealed class CashSessionServiceTests : IDisposable
         Assert.Equal(20000, open.OpeningFloatCents);
     }
 }
+

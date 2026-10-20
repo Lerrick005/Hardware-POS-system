@@ -219,14 +219,17 @@ public sealed class ProductRepository : IProductRepository
                     product, tx, cancellationToken: ct));
             }
 
+            // Backwards-compatible: prices are written against the product's
+            // base unit. Multi-unit price writes come through a separate method.
+            int baseUnitId = product.BaseUnitId;
             foreach (var (tierId, priceCents) in pricesByTierId)
             {
                 await connection.ExecuteAsync(new CommandDefinition(@"
-                    INSERT INTO product_prices(product_id, tier_id, price_cents)
-                    VALUES ($productId, $tierId, $priceCents)
-                    ON CONFLICT(product_id, tier_id)
+                    INSERT INTO product_prices(product_id, tier_id, unit_id, price_cents)
+                    VALUES ($productId, $tierId, $unitId, $priceCents)
+                    ON CONFLICT(product_id, tier_id, unit_id)
                     DO UPDATE SET price_cents = excluded.price_cents",
-                    new { productId, tierId, priceCents },
+                    new { productId, tierId, unitId = baseUnitId, priceCents },
                     tx, cancellationToken: ct));
             }
 
@@ -294,9 +297,18 @@ public sealed class ProductRepository : IProductRepository
     public async Task<long?> GetPriceAsync(int productId, int tierId, CancellationToken ct = default)
     {
         using var connection = _factory.CreateOpen();
+
+        // Backwards-compatible: base-unit price lookup. Multi-unit callers
+        // should use GetPriceForUnitAsync (added in the next slice).
+        int? baseUnitId = await connection.ExecuteScalarAsync<int?>(new CommandDefinition(
+            "SELECT base_unit_id FROM products WHERE id = $productId",
+            new { productId }, cancellationToken: ct));
+
+        if (baseUnitId is null) return null;
+
         return await connection.ExecuteScalarAsync<long?>(new CommandDefinition(
-            "SELECT price_cents FROM product_prices WHERE product_id = $productId AND tier_id = $tierId",
-            new { productId, tierId }, cancellationToken: ct));
+            "SELECT price_cents FROM product_prices WHERE product_id = $productId AND tier_id = $tierId AND unit_id = $unitId",
+            new { productId, tierId, unitId = baseUnitId.Value }, cancellationToken: ct));
     }
 
     public async Task UpsertPriceAsync(int productId, int tierId, long priceCents, CancellationToken ct = default)
@@ -307,11 +319,24 @@ public sealed class ProductRepository : IProductRepository
         }
 
         using var connection = _factory.CreateOpen();
+
+        // Backwards-compatible: writes the base-unit price. Multi-unit callers
+        // should use UpsertPriceForUnitAsync (added in the next slice).
+        int? baseUnitId = await connection.ExecuteScalarAsync<int?>(new CommandDefinition(
+            "SELECT base_unit_id FROM products WHERE id = $productId",
+            new { productId }, cancellationToken: ct));
+
+        if (baseUnitId is null)
+        {
+            throw new InvalidOperationException($"Product {productId} not found.");
+        }
+
         await connection.ExecuteAsync(new CommandDefinition(@"
-            INSERT INTO product_prices(product_id, tier_id, price_cents)
-            VALUES ($productId, $tierId, $priceCents)
-            ON CONFLICT(product_id, tier_id)
+            INSERT INTO product_prices(product_id, tier_id, unit_id, price_cents)
+            VALUES ($productId, $tierId, $unitId, $priceCents)
+            ON CONFLICT(product_id, tier_id, unit_id)
             DO UPDATE SET price_cents = excluded.price_cents",
-            new { productId, tierId, priceCents }, cancellationToken: ct));
+            new { productId, tierId, unitId = baseUnitId.Value, priceCents }, cancellationToken: ct));
     }
 }
+

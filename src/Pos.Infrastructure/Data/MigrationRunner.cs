@@ -30,6 +30,7 @@ public sealed class MigrationRunner
         new(new Version(1, 1), "Pos.Infrastructure.Migrations.001_baseline.sql"),
         new(new Version(1, 2), "Pos.Infrastructure.Migrations.002_admin_promotion.sql"),
         new(new Version(1, 3), "Pos.Infrastructure.Migrations.003_expenses.sql"),
+        new(new Version(1, 4), "Pos.Infrastructure.Migrations.004_multi_unit_pricing.sql"),
     };
 
     private readonly DbConnectionFactory _factory;
@@ -156,3 +157,4 @@ public sealed class MigrationRunner
         return reader.ReadToEnd();
     }
 }
+

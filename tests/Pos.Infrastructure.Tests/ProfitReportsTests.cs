@@ -45,7 +45,7 @@ public sealed class ProfitReportsTests : IDisposable
             new { uuid = Guid.NewGuid().ToString("N"), name, costCents, stockMilli });
 
         c.Execute(@"
-            INSERT INTO product_prices(product_id, tier_id, price_cents) VALUES ($id, 1, $priceCents)",
+            INSERT INTO product_prices(product_id, tier_id, unit_id, price_cents) VALUES ($id, 1, 1, $priceCents)",
             new { id, priceCents });
         return id;
     }
@@ -155,7 +155,7 @@ public sealed class ProfitReportsTests : IDisposable
             INSERT INTO products(uuid, name, base_unit_id, avg_cost_cents, stock_milli, is_active)
             VALUES ($uuid, 'Mystery Item', 1, 0, 10000, 1) RETURNING id",
             new { uuid = Guid.NewGuid().ToString("N") });
-        c.Execute("INSERT INTO product_prices(product_id, tier_id, price_cents) VALUES ($id, 1, 500)",
+        c.Execute("INSERT INTO product_prices(product_id, tier_id, unit_id, price_cents) VALUES ($id, 1, 1, 500)",
             new { id = zeroCostProduct });
 
         await SellAndPayAsync(zeroCostProduct, 1_000);
@@ -249,3 +249,4 @@ public sealed class ProfitReportsTests : IDisposable
         Assert.DoesNotContain(rows, r => r.ProductName == "Empty Product");
     }
 }
+
