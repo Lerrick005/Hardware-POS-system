@@ -93,3 +93,10 @@ Format: ADR-lite. Newest at top. Never delete; supersede instead.
   | User / Role |
   | GRN (abbreviation of Goods received) |
 - Consequences: Any new UI text added later must go through the dictionary. If a term is missing from this table, default to whatever the shop owner would say at the counter, not the schema field name.
+
+## ADR-0011: Dapper-materialized DTOs must be classes, not positional records
+- Date: 2026-10-20
+- Status: Accepted
+- Context: Dapper needs a parameterless constructor + property setters (or a constructor whose parameter types exactly match the reader's types, which for SQLite means Int64 for all numerics). Positional records with `int`, `int?`, `bool` parameters fail with "A parameterless default constructor or one matching signature is required".
+- Decision: Any type used as the target of `QueryAsync<T>` / `QueryFirstOrDefaultAsync<T>` must be a **class** with settable properties. Positional records are fine for non-Dapper DTOs (business logic inputs/outputs). Value-equality records that need materialization should be converted to classes with `init` or `set` properties.
+- Consequences: Existing `CustomerListItem` converted. `GoodsReceiptSummary` and `GoodsReceiptDetailLine` flagged for conversion before their UI lands.

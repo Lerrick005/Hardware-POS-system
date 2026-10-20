@@ -41,7 +41,7 @@ public sealed class ReceiveGoodsQuery : IReceiveGoodsQuery
     {
         using var connection = _factory.CreateOpen();
 
-        HeaderRow? header = await connection.QueryFirstOrDefaultAsync<HeaderRow>(new CommandDefinition(@"
+        GoodsReceiptSummary? header = await connection.QueryFirstOrDefaultAsync<GoodsReceiptSummary>(new CommandDefinition(@"
             SELECT g.id           AS Id,
                    g.grn_number   AS GrnNumber,
                    g.supplier_id  AS SupplierId,
@@ -50,7 +50,8 @@ public sealed class ReceiveGoodsQuery : IReceiveGoodsQuery
                    g.total_cents  AS TotalCents,
                    g.paid_cents   AS PaidCents,
                    g.business_date AS BusinessDate,
-                   g.created_at   AS CreatedAt
+                   g.created_at   AS CreatedAt,
+                   0              AS LineCount
               FROM goods_receipts g
               LEFT JOIN suppliers s ON s.id = g.supplier_id
              WHERE g.id = $id",
@@ -73,29 +74,18 @@ public sealed class ReceiveGoodsQuery : IReceiveGoodsQuery
              ORDER BY i.id",
             new { id = receiptId }, cancellationToken: ct));
 
-        return new GoodsReceiptDetail(
-            header.Id,
-            header.GrnNumber,
-            header.SupplierId,
-            header.SupplierName,
-            header.SupplierRef,
-            header.TotalCents,
-            header.PaidCents,
-            header.BusinessDate,
-            header.CreatedAt,
-            lines.AsList());
-    }
-
-    private sealed class HeaderRow
-    {
-        public int Id { get; set; }
-        public string GrnNumber { get; set; } = "";
-        public int? SupplierId { get; set; }
-        public string? SupplierName { get; set; }
-        public string? SupplierRef { get; set; }
-        public long TotalCents { get; set; }
-        public long PaidCents { get; set; }
-        public string BusinessDate { get; set; } = "";
-        public string CreatedAt { get; set; } = "";
+        return new GoodsReceiptDetail
+        {
+            Id = header.Id,
+            GrnNumber = header.GrnNumber,
+            SupplierId = header.SupplierId,
+            SupplierName = header.SupplierName,
+            SupplierRef = header.SupplierRef,
+            TotalCents = header.TotalCents,
+            PaidCents = header.PaidCents,
+            BusinessDate = header.BusinessDate,
+            CreatedAt = header.CreatedAt,
+            Lines = lines.AsList(),
+        };
     }
 }
