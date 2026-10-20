@@ -160,13 +160,41 @@ public partial class SellViewModel : ObservableObject
 
     private async Task RepriceCartAsync(int tierId)
     {
+        // Rebuild every line's unit options at the new tier. Each unit has its
+        // own price per tier, so we can't just "update one price" — the whole
+        // picker needs the correct prices for Retail vs Wholesale vs Contractor.
         foreach (CartLineViewModel line in Lines)
         {
-            long? price = await _products.GetPriceAsync(line.ProductId, tierId);
-            if (price is not null)
+            IReadOnlyList<ProductUnitInfo> unitInfos = await _products.ListProductUnitsAsync(line.ProductId);
+            IReadOnlyList<ProductPriceInfo> allPrices = await _products.ListAllPricesAsync(line.ProductId);
+
+            var newOptions = new List<CartUnitOption>();
+            foreach (ProductUnitInfo ui in unitInfos)
             {
-                line.SetUnitPrice(price.Value);
+                long? price = allPrices
+                    .FirstOrDefault(p => p.TierId == tierId && p.UnitId == ui.UnitId)?.PriceCents;
+
+                if (price is null) continue;   // this unit has no price at this tier
+
+                Unit? unitDetail = await _units.GetByIdAsync(ui.UnitId);
+                bool allowsDecimal = unitDetail?.AllowsDecimal ?? false;
+
+                newOptions.Add(new CartUnitOption(
+                    UnitId: ui.UnitId,
+                    UnitName: ui.UnitName,
+                    UnitSymbol: ui.UnitSymbol,
+                    FactorMilli: ui.FactorMilli,
+                    PriceCents: price.Value,
+                    AllowsDecimal: allowsDecimal));
             }
+
+            if (newOptions.Count == 0)
+            {
+                ErrorMessage = $"'{line.ProductName}' has no prices at this price tier. Change the price type back or edit the product.";
+                return;
+            }
+
+            line.UpdateUnitOptions(newOptions);
         }
         Recalculate();
     }
@@ -194,34 +222,61 @@ public partial class SellViewModel : ObservableObject
         }
 
         int tierId = SelectedPriceTierId ?? 1;
-        long? unitPrice = await _products.GetPriceAsync(PickerProduct.Id, tierId);
-        if (unitPrice is null)
+
+        // Load all configured selling units for this product + all prices at this tier
+        IReadOnlyList<ProductUnitInfo> unitInfos = await _products.ListProductUnitsAsync(PickerProduct.Id);
+        IReadOnlyList<ProductPriceInfo> allPrices = await _products.ListAllPricesAsync(PickerProduct.Id);
+
+        // Build a unit option per configured unit that has a price at this tier
+        var unitOptions = new List<CartUnitOption>();
+        foreach (ProductUnitInfo ui in unitInfos)
         {
-            unitPrice = await _products.GetPriceAsync(PickerProduct.Id, PriceTiers.FirstOrDefault()?.Id ?? tierId);
+            long? price = allPrices
+                .FirstOrDefault(p => p.TierId == tierId && p.UnitId == ui.UnitId)?.PriceCents;
+
+            // Fall back to default tier price if current tier has none
+            if (price is null)
+            {
+                int defaultTierId = PriceTiers.FirstOrDefault()?.Id ?? tierId;
+                price = allPrices
+                    .FirstOrDefault(p => p.TierId == defaultTierId && p.UnitId == ui.UnitId)?.PriceCents;
+            }
+
+            if (price is null) continue;  // this unit has no price set, skip it
+
+            Unit? unitDetail = await _units.GetByIdAsync(ui.UnitId);
+            bool allowsDecimal = unitDetail?.AllowsDecimal ?? false;
+
+            unitOptions.Add(new CartUnitOption(
+                UnitId: ui.UnitId,
+                UnitName: ui.UnitName,
+                UnitSymbol: ui.UnitSymbol,
+                FactorMilli: ui.FactorMilli,
+                PriceCents: price.Value,
+                AllowsDecimal: allowsDecimal));
         }
-        if (unitPrice is null)
+
+        if (unitOptions.Count == 0)
         {
-            ErrorMessage = $"No price set for '{PickerProduct.Name}' at this price type. Edit the product first.";
+            ErrorMessage = $"'{PickerProduct.Name}' has no prices set at this price type. Edit the product first.";
             return;
         }
 
-        Unit? baseUnit = await _units.GetByIdAsync(PickerProduct.BaseUnitId);
-        bool allowsDecimal = baseUnit?.AllowsDecimal ?? false;
+        // Default to the base unit
+        CartUnitOption defaultUnit = unitOptions.FirstOrDefault(u => u.UnitId == PickerProduct.BaseUnitId)
+                                     ?? unitOptions[0];
 
-        if (!allowsDecimal && !qty.IsWhole)
-        {
-            ErrorMessage = $"'{PickerProduct.Name}' is sold by {baseUnit?.Name ?? "whole unit"} — enter a whole number.";
-            return;
-        }
+        // Merge if a line exists for (same product, same unit). Otherwise add new.
+        CartLineViewModel? existing = Lines.FirstOrDefault(l =>
+            l.ProductId == PickerProduct.Id && l.UnitId == defaultUnit.UnitId);
 
-        CartLineViewModel? existing = Lines.FirstOrDefault(l => l.ProductId == PickerProduct.Id);
         if (existing is not null)
         {
             existing.SetQuantityMilli(existing.QtyMilli + qty.Milli);
         }
         else
         {
-            CartLineViewModel line = new(PickerProduct, PickerProduct.BaseUnitId, baseUnit?.Name ?? "pc", unitPrice.Value, allowsDecimal);
+            CartLineViewModel line = new(PickerProduct, unitOptions, defaultUnit);
             line.SetQuantityMilli(qty.Milli);
             line.Changed += OnLineChanged;
             Lines.Add(line);
@@ -411,4 +466,6 @@ public partial class SellViewModel : ObservableObject
 
     public sealed record PriceTierOption(int Id, string Name);
 }
+
+
 

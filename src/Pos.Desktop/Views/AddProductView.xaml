@@ -16,13 +16,12 @@
 
         <StackPanel Grid.Row="0" Margin="0,0,0,16">
             <TextBlock Text="{Binding WindowTitle}" Style="{StaticResource Text.Title}" />
-            <TextBlock Text="Product details, prices, and any extra units it can be sold in."
+            <TextBlock Text="Product details, price, and any extra units it can be sold in."
                        Style="{StaticResource Text.Caption}" Margin="0,2,0,0" TextWrapping="Wrap" />
         </StackPanel>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <!-- ===== Basic details ===== -->
                 <TextBlock Text="Product name *" Style="{StaticResource Text.Label}" />
                 <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
                          Padding="8,6" Margin="0,4,0,12"
@@ -63,9 +62,7 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
-                        <TextBlock Style="{StaticResource Text.Label}">
-                            <Run Text="Sold by (base unit) *" />
-                        </TextBlock>
+                        <TextBlock Text="Sold by (base unit) *" Style="{StaticResource Text.Label}" />
                         <ComboBox ItemsSource="{Binding Units}"
                                   SelectedItem="{Binding SelectedUnit}"
                                   IsEnabled="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}"
@@ -95,51 +92,24 @@
                          BorderBrush="{StaticResource Brush.Border.Default}"
                          BorderThickness="1" />
 
-                <!-- ===== Prices for the base unit ===== -->
+                <!-- ===== Price for the base unit ===== -->
                 <Border Background="{StaticResource Brush.Surface.Sunken}"
                         CornerRadius="{StaticResource Radius.Medium}"
                         Padding="12"
                         Margin="0,0,0,16">
                     <StackPanel>
-                        <TextBlock Text="Base unit prices (KES)"
+                        <TextBlock Text="Selling price (KES)"
                                    Style="{StaticResource Text.Label}"
                                    Margin="0,0,0,8" />
 
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Retail" Style="{StaticResource Text.Caption}" Margin="0,0,0,2" />
-                                <TextBox Text="{Binding RetailPriceText, UpdateSourceTrigger=PropertyChanged}"
-                                         Padding="8,6"
-                                         Background="{StaticResource Brush.Surface}"
-                                         BorderBrush="{StaticResource Brush.Border.Default}"
-                                         BorderThickness="1" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Wholesale" Style="{StaticResource Text.Caption}" Margin="0,0,0,2" />
-                                <TextBox Text="{Binding WholesalePriceText, UpdateSourceTrigger=PropertyChanged}"
-                                         Padding="8,6"
-                                         Background="{StaticResource Brush.Surface}"
-                                         BorderBrush="{StaticResource Brush.Border.Default}"
-                                         BorderThickness="1" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="4">
-                                <TextBlock Text="Contractor" Style="{StaticResource Text.Caption}" Margin="0,0,0,2" />
-                                <TextBox Text="{Binding ContractorPriceText, UpdateSourceTrigger=PropertyChanged}"
-                                         Padding="8,6"
-                                         Background="{StaticResource Brush.Surface}"
-                                         BorderBrush="{StaticResource Brush.Border.Default}"
-                                         BorderThickness="1" />
-                            </StackPanel>
-                        </Grid>
+                        <TextBox Text="{Binding RetailPriceText, UpdateSourceTrigger=PropertyChanged}"
+                                 Padding="10,8" Width="220" HorizontalAlignment="Left"
+                                 FontSize="{StaticResource Font.Size.BodyLarge}"
+                                 Background="{StaticResource Brush.Surface}"
+                                 BorderBrush="{StaticResource Brush.Border.Default}"
+                                 BorderThickness="1" />
 
-                        <TextBlock Text="Price per 1 of the base unit. Leave blank for tiers the shop does not use."
+                        <TextBlock Text="Price per 1 of the base unit. You can change it any time."
                                    Style="{StaticResource Text.Caption}"
                                    TextWrapping="Wrap"
                                    Margin="0,6,0,0" />
@@ -161,7 +131,7 @@
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="Other units this product can be sold in"
                                            Style="{StaticResource Text.Subtitle}" />
-                                <TextBlock Text="Optional. E.g. 1 Box = 120 pieces, 1 kg = 25 pieces. Each unit has its own prices."
+                                <TextBlock Text="Optional. E.g. 1 Box = 120 pieces, 1 kg = 25 pieces. Each unit has its own price."
                                            Style="{StaticResource Text.Caption}"
                                            TextWrapping="Wrap"
                                            Margin="0,2,0,0" />
@@ -174,15 +144,12 @@
                                     VerticalAlignment="Center" />
                         </Grid>
 
-                        <!-- Column headers (visible only when rows exist) -->
+                        <!-- Column headers -->
                         <Grid Margin="0,4,0,4">
                             <Grid.Style>
                                 <Style TargetType="Grid">
                                     <Setter Property="Visibility" Value="Collapsed" />
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SellingUnits.Count}" Value="0">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
                                         <DataTrigger Binding="{Binding SellingUnits.Count}" Value="1">
                                             <Setter Property="Visibility" Value="Visible" />
                                         </DataTrigger>
@@ -195,30 +162,21 @@
                                         <DataTrigger Binding="{Binding SellingUnits.Count}" Value="4">
                                             <Setter Property="Visibility" Value="Visible" />
                                         </DataTrigger>
-                                        <DataTrigger Binding="{Binding SellingUnits.Count}" Value="5">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Grid.Style>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="140" />
+                                <ColumnDefinition Width="180" />
                                 <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="70" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="100" />
                                 <ColumnDefinition Width="8" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="8" />
                                 <ColumnDefinition Width="30" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="Unit" Style="{StaticResource Text.Caption}" FontWeight="SemiBold" />
-                            <TextBlock Grid.Column="2" Text="1 = n" Style="{StaticResource Text.Caption}" FontWeight="SemiBold" />
-                            <TextBlock Grid.Column="4" Text="Retail (KES)" Style="{StaticResource Text.Caption}" FontWeight="SemiBold" />
-                            <TextBlock Grid.Column="6" Text="Wholesale" Style="{StaticResource Text.Caption}" FontWeight="SemiBold" />
-                            <TextBlock Grid.Column="8" Text="Contractor" Style="{StaticResource Text.Caption}" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="2" Text="1 unit = n" Style="{StaticResource Text.Caption}" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="4" Text="Price (KES)" Style="{StaticResource Text.Caption}" FontWeight="SemiBold" />
                         </Grid>
 
                         <ItemsControl ItemsSource="{Binding SellingUnits}">
@@ -226,13 +184,9 @@
                                 <DataTemplate>
                                     <Grid Margin="0,0,0,6">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="140" />
+                                            <ColumnDefinition Width="180" />
                                             <ColumnDefinition Width="8" />
-                                            <ColumnDefinition Width="70" />
-                                            <ColumnDefinition Width="8" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="8" />
-                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="100" />
                                             <ColumnDefinition Width="8" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="8" />
@@ -261,23 +215,7 @@
                                                  BorderThickness="1"
                                                  TextAlignment="Right" />
 
-                                        <TextBox Grid.Column="6"
-                                                 Text="{Binding WholesalePriceText, UpdateSourceTrigger=PropertyChanged}"
-                                                 Padding="6,4"
-                                                 Background="{StaticResource Brush.Surface}"
-                                                 BorderBrush="{StaticResource Brush.Border.Default}"
-                                                 BorderThickness="1"
-                                                 TextAlignment="Right" />
-
-                                        <TextBox Grid.Column="8"
-                                                 Text="{Binding ContractorPriceText, UpdateSourceTrigger=PropertyChanged}"
-                                                 Padding="6,4"
-                                                 Background="{StaticResource Brush.Surface}"
-                                                 BorderBrush="{StaticResource Brush.Border.Default}"
-                                                 BorderThickness="1"
-                                                 TextAlignment="Right" />
-
-                                        <Button Grid.Column="10"
+                                        <Button Grid.Column="6"
                                                 Content="×"
                                                 Command="{Binding DataContext.RemoveSellingUnitCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                 CommandParameter="{Binding}"
@@ -289,7 +227,6 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <!-- Empty state -->
                         <TextBlock Text="No extra units yet. The product is only sold in its base unit."
                                    TextWrapping="Wrap"
                                    Margin="0,4,0,0">
@@ -307,7 +244,6 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ===== Error banner ===== -->
                 <Border Background="{StaticResource Brush.Danger.Subtle}"
                         BorderBrush="{StaticResource Brush.Danger}"
                         BorderThickness="1"
@@ -335,4 +271,3 @@
         </StackPanel>
     </Grid>
 </Window>
-
