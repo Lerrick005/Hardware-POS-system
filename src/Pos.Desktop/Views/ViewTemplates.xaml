@@ -10,7 +10,13 @@
     <DataTemplate DataType="{x:Type vm:SuppliersViewModel}"><views:SuppliersView /></DataTemplate>
     <DataTemplate DataType="{x:Type vm:SellViewModel}"><views:SellView /></DataTemplate>
     <DataTemplate DataType="{x:Type vm:ReportsViewModel}"><views:ReportsView /></DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:SettingsHubViewModel}"><views:SettingsHubView /></DataTemplate>
+    <DataTemplate DataType="{x:Type vm:StaffViewModel}"><views:StaffView /></DataTemplate>
     <DataTemplate DataType="{x:Type vm:SettingsViewModel}"><views:SettingsView /></DataTemplate>
+    <DataTemplate DataType="{x:Type vm:AuditViewModel}"><views:AuditView /></DataTemplate>
+    <DataTemplate DataType="{x:Type vm:AboutViewModel}"><views:AboutView /></DataTemplate>
+
     <DataTemplate DataType="{x:Type vm:PlaceholderViewModel}"><views:PlaceholderView /></DataTemplate>
 
 </ResourceDictionary>

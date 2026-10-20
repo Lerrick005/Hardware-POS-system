@@ -17,11 +17,18 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 
   <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Include="..\..\pos_schema.sql" LogicalName="Pos.Infrastructure.Migrations.001_baseline.sql" />
     <EmbeddedResource Include="Data\Migrations\002_admin_promotion.sql" LogicalName="Pos.Infrastructure.Migrations.002_admin_promotion.sql" />
+    <EmbeddedResource Include="Data\Migrations\003_expenses.sql" LogicalName="Pos.Infrastructure.Migrations.003_expenses.sql" />
   </ItemGroup>
 </Project>
+
+
+
 

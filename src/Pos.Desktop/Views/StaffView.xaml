@@ -1,0 +1,169 @@
+﻿<UserControl x:Class="Pos.Desktop.Views.StaffView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="32,28,32,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Staff" Style="{StaticResource Text.Display}" />
+                <TextBlock Text="People who can log in to this till."
+                           Style="{StaticResource Text.Body}"
+                           Foreground="{StaticResource Brush.Text.Secondary}"
+                           Margin="0,4,0,0" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{StaticResource Button.Secondary}"
+                        Command="{Binding RefreshCommand}"
+                        Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{StaticResource Icon.Refresh}" FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBlock Text="Refresh" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource Button.Primary}"
+                        Command="{Binding AddStaffCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{StaticResource Icon.Add}" FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBlock Text="Add staff" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="{Binding StatusText}" Style="{StaticResource Text.Caption}"
+                       VerticalAlignment="Center" />
+            <CheckBox Grid.Column="1" Content="Show archived" IsChecked="{Binding ShowArchived}"
+                      VerticalAlignment="Center" FontSize="{StaticResource Font.Size.Body}" />
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <Border Background="{StaticResource Brush.Surface}"
+                    BorderBrush="{StaticResource Brush.Border.Default}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource Radius.Large}">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding Staff.Count}" Value="0" />
+                                    <Condition Binding="{Binding IsBusy}" Value="False" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <DataGrid ItemsSource="{Binding Staff}"
+                          Style="{StaticResource DataGrid.Default}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
+                        <DataGridTextColumn Header="Role" Binding="{Binding Role}" Width="120" />
+                        <DataGridTextColumn Header="PIN" Binding="{Binding PinStatus}"
+                                            Width="90" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding ActiveStatus}"
+                                            Width="90" />
+                        <DataGridTemplateColumn Header="" Width="180">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button Content="Edit"
+                                                Command="{Binding DataContext.EditStaffCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource Button.Ghost}"
+                                                Height="28" Padding="10,0"
+                                                Margin="0,0,4,0"
+                                                Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                        <Button Content="Remove"
+                                                Command="{Binding DataContext.ArchiveStaffCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource Button.Ghost}"
+                                                Height="28" Padding="10,0"
+                                                Foreground="{StaticResource Brush.Danger}"
+                                                Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                        <Button Content="Restore"
+                                                Command="{Binding DataContext.UnarchiveStaffCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource Button.Ghost}"
+                                                Height="28" Padding="10,0"
+                                                Foreground="{StaticResource Brush.Accent}"
+                                                Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <Border Background="{StaticResource Brush.Surface}"
+                    BorderBrush="{StaticResource Brush.Border.Default}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource Radius.Large}">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding Staff.Count}" Value="0" />
+                                    <Condition Binding="{Binding IsBusy}" Value="False" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Visible" />
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                            MaxWidth="420" Margin="24">
+                    <TextBlock Text="{StaticResource Icon.People}"
+                               FontFamily="{StaticResource Font.Icon}"
+                               FontSize="56"
+                               Foreground="{StaticResource Brush.Text.Tertiary}"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="No staff members yet"
+                               Style="{StaticResource Text.Title}"
+                               HorizontalAlignment="Center"
+                               Margin="0,16,0,0" />
+                    <TextBlock Text="Add staff so each person has their own login and audit trail."
+                               Style="{StaticResource Text.Body}"
+                               Foreground="{StaticResource Brush.Text.Secondary}"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               Margin="0,6,0,20" />
+                    <Button Style="{StaticResource Button.Primary}"
+                            Command="{Binding AddStaffCommand}"
+                            HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{StaticResource Icon.Add}" FontFamily="{StaticResource Font.Icon}"
+                                       FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="Add your first staff member" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <TextBlock Grid.Row="3" Text=""
+                   Style="{StaticResource Text.Caption}" Margin="0,12,0,0" />
+    </Grid>
+</UserControl>
+

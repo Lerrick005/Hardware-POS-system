@@ -16,6 +16,12 @@ public sealed class StaffMember
     public bool HasPinSet { get; set; }
 
     public string? CreatedAt { get; set; }
+
+    /// <summary>Shop-language PIN status. ADR-0010: display strings live in the model.</summary>
+    public string PinStatus => HasPinSet ? "Set" : "Not set";
+
+    /// <summary>Shop-language active/archived status.</summary>
+    public string ActiveStatus => IsActive ? "Active" : "Archived";
 }
 
 public interface IUserAdminService
@@ -79,3 +85,4 @@ public interface IUserAdminService
     /// </summary>
     Task UnarchiveStaffAsync(int userId, CancellationToken ct = default);
 }
+

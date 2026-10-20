@@ -1,5 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
+using Pos.Application.Users;
 
 namespace Pos.Desktop.ViewModels;
 
@@ -12,12 +14,16 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly SuppliersViewModel _suppliers;
     private readonly SellViewModel _sell;
     private readonly ReportsViewModel _reports;
-    private readonly SettingsViewModel _settings;
+    private readonly SettingsHubViewModel _settingsHub;
+    private readonly IUserSession _session;
+    private readonly ILogger<MainWindowViewModel> _logger;
 
     [ObservableProperty] private object? currentView;
     [ObservableProperty] private string currentTitle = "Dashboard";
     [ObservableProperty] private string selectedNav = "Dashboard";
     [ObservableProperty] private string userLabel = "Not signed in";
+
+    public bool IsAdmin => string.Equals(_session.CurrentUserRole, "ADMIN", StringComparison.Ordinal);
 
     public MainWindowViewModel(
         DashboardViewModel dashboard,
@@ -27,7 +33,9 @@ public partial class MainWindowViewModel : ObservableObject
         SuppliersViewModel suppliers,
         SellViewModel sell,
         ReportsViewModel reports,
-        SettingsViewModel settings)
+        SettingsHubViewModel settingsHub,
+        IUserSession session,
+        ILogger<MainWindowViewModel> logger)
     {
         _dashboard = dashboard;
         _products = products;
@@ -36,7 +44,9 @@ public partial class MainWindowViewModel : ObservableObject
         _suppliers = suppliers;
         _sell = sell;
         _reports = reports;
-        _settings = settings;
+        _settingsHub = settingsHub;
+        _session = session;
+        _logger = logger;
         ShowDashboard();
     }
 
@@ -106,8 +116,16 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void ShowSettings()
     {
-        _ = _settings.LoadAsync();
-        CurrentView = _settings;
+        if (!IsAdmin)
+        {
+            _logger.LogWarning(
+                "Non-admin user {Name} ({Role}) attempted to open Settings.",
+                _session.CurrentUserName, _session.CurrentUserRole);
+            return;
+        }
+
+        _ = _settingsHub.LoadAsync();
+        CurrentView = _settingsHub;
         CurrentTitle = "Settings";
         SelectedNav = "Settings";
     }

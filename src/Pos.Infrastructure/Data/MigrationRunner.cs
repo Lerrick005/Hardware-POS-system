@@ -29,6 +29,7 @@ public sealed class MigrationRunner
     {
         new(new Version(1, 1), "Pos.Infrastructure.Migrations.001_baseline.sql"),
         new(new Version(1, 2), "Pos.Infrastructure.Migrations.002_admin_promotion.sql"),
+        new(new Version(1, 3), "Pos.Infrastructure.Migrations.003_expenses.sql"),
     };
 
     private readonly DbConnectionFactory _factory;
@@ -79,7 +80,6 @@ public sealed class MigrationRunner
                 return new MigrationResult(MigrationOutcome.UpToDate, current, TargetVersion, null, null);
             }
 
-            // Backup only for existing DBs, not fresh installs (nothing to lose).
             string? backupPath = null;
             if (!isFresh)
             {

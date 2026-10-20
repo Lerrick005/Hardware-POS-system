@@ -79,10 +79,12 @@
                              Command="{Binding ShowReportsCommand}" />
                 <RadioButton Content="Settings" Style="{StaticResource NavButton}" Margin="0,0,0,4"
                              IsChecked="{Binding SelectedNav, Converter={StaticResource EqualsConverter}, ConverterParameter=Settings, Mode=OneWay}"
-                             Command="{Binding ShowSettingsCommand}" />
+                             Command="{Binding ShowSettingsCommand}"
+                             Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisibilityConverter}}" />
             </StackPanel>
         </Border>
 
         <ContentControl Grid.Row="1" Grid.Column="1" Content="{Binding CurrentView}" />
     </Grid>
 </Window>
+

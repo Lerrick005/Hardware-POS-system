@@ -33,10 +33,6 @@ public partial class App : System.Windows.Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
-        // Critical: prevent WPF from auto-shutting-down when the login
-        // dialog closes (before MainWindow exists). With the default
-        // OnLastWindowClose mode, closing the login dialog kills the app
-        // before we ever show the main window.
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         base.OnStartup(e);
@@ -61,6 +57,7 @@ public partial class App : System.Windows.Application
 
         services.AddSingleton<IPinHasher, PinHasher>();
         services.AddSingleton<IUserRepository, UserRepository>();
+        services.AddSingleton<IUserAdminService, UserAdminService>();
         services.AddSingleton<IUserSession, UserSession>();
 
         services.AddSingleton<IProductRepository, ProductRepository>();
@@ -85,7 +82,12 @@ public partial class App : System.Windows.Application
         services.AddSingleton<SuppliersViewModel>();
         services.AddSingleton<SellViewModel>();
         services.AddSingleton<ReportsViewModel>();
+        services.AddSingleton<StaffViewModel>();
         services.AddSingleton<SettingsViewModel>();
+        services.AddSingleton<AuditViewModel>();
+        services.AddSingleton<AboutViewModel>();
+        services.AddSingleton<SettingsHubViewModel>();
+
         services.AddTransient<AddProductViewModel>();
         services.AddTransient<AddProductView>();
         services.AddTransient<CategoriesViewModel>();
@@ -100,6 +102,9 @@ public partial class App : System.Windows.Application
         services.AddTransient<StatementView>();
         services.AddTransient<AddSupplierViewModel>();
         services.AddTransient<AddSupplierView>();
+        services.AddTransient<AddStaffViewModel>();
+        services.AddTransient<AddStaffView>();
+
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<MainWindow>();
 
@@ -146,7 +151,6 @@ public partial class App : System.Windows.Application
         MainWindow = window;
         window.Show();
 
-        // Now that the real main window exists, closing it should exit the app.
         ShutdownMode = ShutdownMode.OnMainWindowClose;
     }
 
@@ -214,6 +218,16 @@ public partial class App : System.Windows.Application
             return dialog;
         };
 
+        StaffViewModel staffVm = _services.GetRequiredService<StaffViewModel>();
+        staffVm.CreateAddStaffDialog = (int? staffId) =>
+        {
+            AddStaffView dialog = _services.GetRequiredService<AddStaffView>();
+            AddStaffViewModel vm = (AddStaffViewModel)dialog.DataContext;
+            vm.StaffId = staffId;
+            dialog.Owner = MainWindow;
+            return dialog;
+        };
+
         ISettingsService settingsService = _services.GetRequiredService<ISettingsService>();
         SellViewModel sellVm = _services.GetRequiredService<SellViewModel>();
         sellVm.CreateReceiptDialog = (SaleResult sale) =>
@@ -239,10 +253,8 @@ public partial class App : System.Windows.Application
         using var countCmd = connection.CreateCommand();
         countCmd.CommandText = "SELECT COUNT(1) FROM users";
         long userCount = Convert.ToInt64(countCmd.ExecuteScalar(), System.Globalization.CultureInfo.InvariantCulture);
-        if (userCount > 0)
-        {
-            return;
-        }
+        if (userCount > 0) return;
+
         using var seedCmd = connection.CreateCommand();
         seedCmd.CommandText = "INSERT INTO users(name, role, pin_hash) VALUES ('Cashier', 'CASHIER', 'PIN_NOT_SET')";
         seedCmd.ExecuteNonQuery();
@@ -272,6 +284,3 @@ public partial class App : System.Windows.Application
         base.OnExit(e);
     }
 }
-
-
-
