@@ -1,0 +1,146 @@
+﻿<UserControl x:Class="Pos.Desktop.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="32,28,32,24" MaxWidth="800" HorizontalAlignment="Left">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Header with Save Button in top right -->
+            <Grid Grid.Row="0" Margin="0,0,0,24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Settings" Style="{StaticResource Text.Display}" />
+                    <TextBlock Text="Shop details that appear on every receipt and report."
+                               Style="{StaticResource Text.Body}"
+                               Foreground="{StaticResource Brush.Text.Secondary}"
+                               Margin="0,4,0,0" />
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Content="Save settings"
+                        Command="{Binding SaveCommand}"
+                        Style="{StaticResource Button.Primary}"
+                        Padding="24,8"
+                        IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                        IsDefault="True"
+                        VerticalAlignment="Top" />
+            </Grid>
+
+            <!-- Success / Error Banners -->
+            <StackPanel Grid.Row="1" Margin="0,0,0,16">
+                <Border Background="{StaticResource Brush.Success.Subtle}"
+                        BorderBrush="{StaticResource Brush.Success}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Radius.Medium}"
+                        Padding="12"
+                        Margin="0,0,0,8"
+                        Visibility="{Binding StatusText, Converter={StaticResource EmptyStringToCollapsedConverter}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{StaticResource Icon.Check}" FontFamily="{StaticResource Font.Icon}" 
+                                   Foreground="{StaticResource Brush.Success}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding StatusText}"
+                                   Foreground="{StaticResource Brush.Success}"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{StaticResource Brush.Danger.Subtle}"
+                        BorderBrush="{StaticResource Brush.Danger}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Radius.Medium}"
+                        Padding="12"
+                        Visibility="{Binding ErrorMessage, Converter={StaticResource EmptyStringToCollapsedConverter}}">
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               Foreground="{StaticResource Brush.Danger}"
+                               TextWrapping="Wrap"
+                               FontWeight="SemiBold" />
+                </Border>
+            </StackPanel>
+
+            <!-- Shop profile card -->
+            <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="Shop profile" Style="{StaticResource Text.Subtitle}" Margin="0,0,0,16" />
+
+                    <TextBlock Text="Shop name *" Style="{StaticResource Text.Label}" />
+                    <TextBox Text="{Binding ShopName, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="10,8" Margin="0,4,0,4"
+                             Background="{StaticResource Brush.Surface}"
+                             BorderBrush="{StaticResource Brush.Border.Default}"
+                             BorderThickness="1"
+                             FontSize="{StaticResource Font.Size.Body}" />
+                    <TextBlock Text="Printed at the top of every receipt."
+                               Style="{StaticResource Text.Caption}"
+                               Margin="0,0,0,16" />
+
+                    <TextBlock Text="Address" Style="{StaticResource Text.Label}" />
+                    <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="10,8" Margin="0,4,0,4"
+                             Height="64"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             VerticalScrollBarVisibility="Auto"
+                             Background="{StaticResource Brush.Surface}"
+                             BorderBrush="{StaticResource Brush.Border.Default}"
+                             BorderThickness="1"
+                             FontSize="{StaticResource Font.Size.Body}" />
+                    <TextBlock Text="Street, building, town. Multi-line is fine."
+                               Style="{StaticResource Text.Caption}"
+                               Margin="0,0,0,16" />
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Phone" Style="{StaticResource Text.Label}" />
+                            <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}"
+                                     Padding="10,8" Margin="0,4,0,0"
+                                     Background="{StaticResource Brush.Surface}"
+                                     BorderBrush="{StaticResource Brush.Border.Default}"
+                                     BorderThickness="1"
+                                     FontSize="{StaticResource Font.Size.Body}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="KRA PIN" Style="{StaticResource Text.Label}" />
+                            <TextBox Text="{Binding KraPin, UpdateSourceTrigger=PropertyChanged}"
+                                     Padding="10,8" Margin="0,4,0,0"
+                                     Background="{StaticResource Brush.Surface}"
+                                     BorderBrush="{StaticResource Brush.Border.Default}"
+                                     BorderThickness="1"
+                                     FontSize="{StaticResource Font.Size.Body}" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Receipt footer card -->
+            <Border Grid.Row="3" Style="{StaticResource Card}" Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="Receipt footer" Style="{StaticResource Text.Subtitle}" Margin="0,0,0,16" />
+                    <TextBlock Text="Message at the bottom of every receipt" Style="{StaticResource Text.Label}" />
+                    <TextBox Text="{Binding ReceiptFooter, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="10,8" Margin="0,4,0,4"
+                             Background="{StaticResource Brush.Surface}"
+                             BorderBrush="{StaticResource Brush.Border.Default}"
+                             BorderThickness="1"
+                             FontSize="{StaticResource Font.Size.Body}" />
+                    <TextBlock Text="Examples: 'Thank you for your business!', 'Goods sold are not returnable.'"
+                               Style="{StaticResource Text.Caption}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

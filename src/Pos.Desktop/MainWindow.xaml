@@ -2,13 +2,13 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:Pos.Desktop.ViewModels"
-        d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
         Title="MyPOS" Height="760" Width="1240"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{StaticResource Brush.Canvas}"
         FontFamily="Segoe UI">
     <Grid>
         <Grid.RowDefinitions>
@@ -20,10 +20,9 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <!-- Top bar -->
         <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
-                Background="{StaticResource SurfaceBrush}"
-                BorderBrush="{StaticResource BorderBrush}"
+                Background="{StaticResource Brush.Surface}"
+                BorderBrush="{StaticResource Brush.Border.Default}"
                 BorderThickness="0,0,0,1">
             <Grid Margin="16,0">
                 <Grid.ColumnDefinitions>
@@ -32,20 +31,29 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="MyPOS" Style="{StaticResource TitleText}" VerticalAlignment="Center" />
-                    <TextBlock Text="  /  " Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="8,0" />
-                    <TextBlock Text="{Binding CurrentTitle}" Style="{StaticResource BodyText}" VerticalAlignment="Center"
-                               Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="MyPOS" Style="{StaticResource Text.Title}" VerticalAlignment="Center" />
+                    <TextBlock Text="  /  " Foreground="{StaticResource Brush.Text.Secondary}" VerticalAlignment="Center" Margin="8,0" />
+                    <Button Command="{Binding ShowDashboardCommand}"
+                            Style="{StaticResource Button.Ghost}"
+                            Padding="10,4"
+                            Margin="4,0,8,0"
+                            Visibility="{Binding SelectedNav, Converter={StaticResource EqualsConverterToVisibility}, ConverterParameter=Invert:Dashboard}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{StaticResource Icon.ChevronLeft}" FontFamily="{StaticResource Font.Icon}" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="Dashboard" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <TextBlock Text="{Binding CurrentTitle}" Style="{StaticResource Text.Body}" VerticalAlignment="Center"
+                               Foreground="{StaticResource Brush.Text.Secondary}" />
                 </StackPanel>
-                <TextBlock Grid.Column="2" Text="{Binding UserLabel}" Style="{StaticResource CaptionText}"
+                <TextBlock Grid.Column="2" Text="{Binding UserLabel}" Style="{StaticResource Text.Caption}"
                            VerticalAlignment="Center" />
             </Grid>
         </Border>
 
-        <!-- Nav rail -->
         <Border Grid.Row="1" Grid.Column="0"
-                Background="{StaticResource SurfaceBrush}"
-                BorderBrush="{StaticResource BorderBrush}"
+                Background="{StaticResource Brush.Surface}"
+                BorderBrush="{StaticResource Brush.Border.Default}"
                 BorderThickness="0,0,1,0">
             <StackPanel Margin="12,16">
                 <RadioButton Content="Dashboard" Style="{StaticResource NavButton}" Margin="0,0,0,4"
@@ -60,6 +68,9 @@
                 <RadioButton Content="Stock" Style="{StaticResource NavButton}" Margin="0,0,0,4"
                              IsChecked="{Binding SelectedNav, Converter={StaticResource EqualsConverter}, ConverterParameter=Stock, Mode=OneWay}"
                              Command="{Binding ShowStockCommand}" />
+                <RadioButton Content="Suppliers" Style="{StaticResource NavButton}" Margin="0,0,0,4"
+                             IsChecked="{Binding SelectedNav, Converter={StaticResource EqualsConverter}, ConverterParameter=Suppliers, Mode=OneWay}"
+                             Command="{Binding ShowSuppliersCommand}" />
                 <RadioButton Content="Customers" Style="{StaticResource NavButton}" Margin="0,0,0,4"
                              IsChecked="{Binding SelectedNav, Converter={StaticResource EqualsConverter}, ConverterParameter=Customers, Mode=OneWay}"
                              Command="{Binding ShowCustomersCommand}" />
@@ -72,7 +83,6 @@
             </StackPanel>
         </Border>
 
-        <!-- Content host -->
         <ContentControl Grid.Row="1" Grid.Column="1" Content="{Binding CurrentView}" />
     </Grid>
 </Window>

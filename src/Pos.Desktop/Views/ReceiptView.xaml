@@ -116,7 +116,7 @@
 
                     <TextBlock Text="------------------------------------------------" FontSize="12" HorizontalAlignment="Center" Margin="0,6" />
 
-                    <TextBlock Text="Thank you for your business!" FontSize="12" HorizontalAlignment="Center" Margin="0,10,0,4" />
+                    <TextBlock Text="{Binding ReceiptFooter}" FontSize="12" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="0,10,0,4" />
                 </StackPanel>
             </ScrollViewer>
         </Border>
@@ -134,3 +134,4 @@
         </StackPanel>
     </Grid>
 </Window>
+

@@ -1,14 +1,10 @@
 ﻿using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Pos.Application.Sales;
+using Pos.Application.Settings;
 
 namespace Pos.Desktop.ViewModels;
 
-/// <summary>
-/// Display-only row for the sales receipt. Distinct from ReceiptLineViewModel
-/// (which is the editable goods-received line). Named SaleReceiptLine to avoid
-/// the collision.
-/// </summary>
 public sealed class SaleReceiptLine
 {
     public string ProductName { get; init; } = "";
@@ -19,8 +15,20 @@ public sealed class SaleReceiptLine
 
 public partial class ReceiptViewModel : ObservableObject
 {
-    public ReceiptViewModel(SaleResult sale)
+    public ReceiptViewModel(SaleResult sale, ShopProfile profile)
     {
+        ShopName = string.IsNullOrWhiteSpace(profile.ShopName) ? "MY SHOP" : profile.ShopName;
+
+        var lines = new List<string>();
+        if (!string.IsNullOrWhiteSpace(profile.Address)) lines.Add(profile.Address);
+        if (!string.IsNullOrWhiteSpace(profile.Phone)) lines.Add("Tel: " + profile.Phone);
+        if (!string.IsNullOrWhiteSpace(profile.KraPin)) lines.Add("PIN: " + profile.KraPin);
+        ShopDetails = string.Join("\n", lines);
+
+        ReceiptFooter = string.IsNullOrWhiteSpace(profile.ReceiptFooter)
+            ? "Thank you for your business!"
+            : profile.ReceiptFooter;
+
         ReceiptNumber = sale.ReceiptNumber;
         SubtotalDisplay = new Pos.Domain.Money(sale.SubtotalCents).ToString();
         TaxDisplay = new Pos.Domain.Money(sale.TaxCents).ToString();
@@ -47,8 +55,9 @@ public partial class ReceiptViewModel : ObservableObject
         }
     }
 
-    public string ShopName { get; } = "MY HARDWARE SHOP";
-    public string ShopDetails { get; } = "Nairobi, Kenya\nTel: 0700 000 000\nPIN: P000000000X";
+    public string ShopName { get; }
+    public string ShopDetails { get; }
+    public string ReceiptFooter { get; }
     public string ReceiptNumber { get; }
     public string CompletedAt { get; }
     public string SubtotalDisplay { get; }

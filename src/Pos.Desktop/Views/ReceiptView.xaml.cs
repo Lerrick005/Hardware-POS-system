@@ -1,16 +1,17 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using Pos.Application.Sales;
+using Pos.Application.Settings;
 using Pos.Desktop.ViewModels;
 
 namespace Pos.Desktop.Views;
 
 public partial class ReceiptView : Window
 {
-    public ReceiptView(SaleResult sale)
+    public ReceiptView(SaleResult sale, ShopProfile profile)
     {
         InitializeComponent();
-        DataContext = new ReceiptViewModel(sale);
+        DataContext = new ReceiptViewModel(sale, profile);
         SourceInitialized += (_, _) => ClampToScreen();
     }
 
@@ -19,7 +20,6 @@ public partial class ReceiptView : Window
         PrintDialog printDialog = new PrintDialog();
         if (printDialog.ShowDialog() == true)
         {
-            // Print only the ReceiptPaper border, not the buttons
             printDialog.PrintVisual(ReceiptPaper, "Receipt");
         }
     }

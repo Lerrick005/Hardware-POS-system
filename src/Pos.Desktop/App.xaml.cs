@@ -5,7 +5,9 @@ using Pos.Application.Catalog;
 using Pos.Application.Customers;
 using Pos.Application.Reports;
 using Pos.Application.Sales;
+using Pos.Application.Settings;
 using Pos.Application.Stock;
+using Pos.Application.Suppliers;
 using Pos.Desktop.ViewModels;
 using Pos.Desktop.Views;
 using Pos.Infrastructure.Catalog;
@@ -14,7 +16,9 @@ using Pos.Infrastructure.Data;
 using Pos.Infrastructure.Logging;
 using Pos.Infrastructure.Reports;
 using Pos.Infrastructure.Sales;
+using Pos.Infrastructure.Settings;
 using Pos.Infrastructure.Stock;
+using Pos.Infrastructure.Suppliers;
 using Serilog;
 
 namespace Pos.Desktop;
@@ -53,15 +57,20 @@ public partial class App : System.Windows.Application
         services.AddSingleton<IReceiveGoodsQuery, ReceiveGoodsQuery>();
         services.AddSingleton<ICustomerRepository, CustomerRepository>();
         services.AddSingleton<ICustomerAccountService, CustomerAccountService>();
+        services.AddSingleton<ISupplierRepository, SupplierRepository>();
         services.AddSingleton<ISellService, SellService>();
         services.AddSingleton<IReportsQuery, ReportsQuery>();
+        services.AddSingleton<IDashboardQuery, DashboardQuery>();
+        services.AddSingleton<ISettingsService, SettingsService>();
 
         services.AddSingleton<DashboardViewModel>();
         services.AddSingleton<ProductsViewModel>();
         services.AddSingleton<ReceiveGoodsViewModel>();
         services.AddSingleton<CustomersViewModel>();
+        services.AddSingleton<SuppliersViewModel>();
         services.AddSingleton<SellViewModel>();
         services.AddSingleton<ReportsViewModel>();
+        services.AddSingleton<SettingsViewModel>();
         services.AddTransient<AddProductViewModel>();
         services.AddTransient<AddProductView>();
         services.AddTransient<CategoriesViewModel>();
@@ -74,6 +83,8 @@ public partial class App : System.Windows.Application
         services.AddTransient<RecordPaymentView>();
         services.AddTransient<StatementViewModel>();
         services.AddTransient<StatementView>();
+        services.AddTransient<AddSupplierViewModel>();
+        services.AddTransient<AddSupplierView>();
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<MainWindow>();
 
@@ -129,13 +140,33 @@ public partial class App : System.Windows.Application
             return dialog;
         };
 
-        SellViewModel sellVm = _services.GetRequiredService<SellViewModel>();
-        sellVm.CreateReceiptDialog = (SaleResult sale) =>
+        SuppliersViewModel suppliersVm = _services.GetRequiredService<SuppliersViewModel>();
+        suppliersVm.CreateSupplierDialog = (int? supplierId) =>
         {
-            ReceiptView dialog = new(sale);
+            AddSupplierView dialog = _services.GetRequiredService<AddSupplierView>();
+            AddSupplierViewModel vm = (AddSupplierViewModel)dialog.DataContext;
+            vm.SupplierId = supplierId;
             dialog.Owner = MainWindow;
             return dialog;
         };
+
+        ISettingsService settingsService = _services.GetRequiredService<ISettingsService>();
+        SellViewModel sellVm = _services.GetRequiredService<SellViewModel>();
+        sellVm.CreateReceiptDialog = (SaleResult sale) =>
+        {
+            ShopProfile profile = settingsService.GetShopProfileAsync().GetAwaiter().GetResult();
+            ReceiptView dialog = new(sale, profile);
+            dialog.Owner = MainWindow;
+            return dialog;
+        };
+
+        MainWindowViewModel mainVm = _services.GetRequiredService<MainWindowViewModel>();
+        DashboardViewModel dashVm = _services.GetRequiredService<DashboardViewModel>();
+        dashVm.NavigateToSell = () => mainVm.ShowSellCommand.Execute(null);
+        dashVm.NavigateToStock = () => mainVm.ShowStockCommand.Execute(null);
+        dashVm.NavigateToProducts = () => mainVm.ShowProductsCommand.Execute(null);
+        dashVm.NavigateToCustomers = () => mainVm.ShowCustomersCommand.Execute(null);
+        dashVm.NavigateToReports = () => mainVm.ShowReportsCommand.Execute(null);
 
         MigrationRunner runner = _services.GetRequiredService<MigrationRunner>();
         MigrationResult migration = runner.Run();
@@ -184,4 +215,3 @@ public partial class App : System.Windows.Application
         base.OnExit(e);
     }
 }
-

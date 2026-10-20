@@ -23,53 +23,25 @@ public partial class SellViewModel : ObservableObject
     private CancellationTokenSource? _searchCts;
     private bool _loaded;
 
-    [ObservableProperty]
-    private string searchTerm = "";
+    [ObservableProperty] private string searchTerm = "";
+    [ObservableProperty] private ProductListItem? pickerProduct;
+    [ObservableProperty] private string quantityText = "1";
+    [ObservableProperty] private string errorMessage = "";
+    [ObservableProperty] private string statusText = "";
+    [ObservableProperty] private bool isBusy;
 
-    [ObservableProperty]
-    private ProductListItem? pickerProduct;
+    [ObservableProperty] private long subtotalCents;
+    [ObservableProperty] private long taxCents;
+    [ObservableProperty] private long totalCents;
+    [ObservableProperty] private long paidCents;
+    [ObservableProperty] private long changeCents;
 
-    [ObservableProperty]
-    private string quantityText = "1";
+    [ObservableProperty] private string totalDisplay = "0.00";
+    [ObservableProperty] private string paidDisplay = "0.00";
+    [ObservableProperty] private string changeDisplay = "0.00";
 
-    [ObservableProperty]
-    private string errorMessage = "";
-
-    [ObservableProperty]
-    private string statusText = "";
-
-    [ObservableProperty]
-    private bool isBusy;
-
-    [ObservableProperty]
-    private long subtotalCents;
-
-    [ObservableProperty]
-    private long taxCents;
-
-    [ObservableProperty]
-    private long totalCents;
-
-    [ObservableProperty]
-    private long paidCents;
-
-    [ObservableProperty]
-    private long changeCents;
-
-    [ObservableProperty]
-    private string totalDisplay = "0.00";
-
-    [ObservableProperty]
-    private string paidDisplay = "0.00";
-
-    [ObservableProperty]
-    private string changeDisplay = "0.00";
-
-    [ObservableProperty]
-    private CustomerListItem? selectedCustomer;
-
-    [ObservableProperty]
-    private int? selectedPriceTierId;
+    [ObservableProperty] private CustomerListItem? selectedCustomer;
+    [ObservableProperty] private int? selectedPriceTierId;
 
     public ObservableCollection<ProductListItem> SearchResults { get; } = new();
     public ObservableCollection<CartLineViewModel> Lines { get; } = new();
@@ -112,11 +84,17 @@ public partial class SellViewModel : ObservableObject
         SelectedPriceTierId = defaultTier.Id;
 
         IReadOnlyList<CustomerListItem> customerList = await _customers.ListAsync(includeInactive: false);
+        
         Customers.Clear();
+        // Add the Walk-in Customer as the first option (Id = 0)
+        Customers.Add(new CustomerListItem { Id = 0, Name = "< Walk-in Customer >", BalanceCents = 0 });
         foreach (CustomerListItem c in customerList)
         {
             Customers.Add(c);
         }
+        
+        // Default to Walk-in
+        SelectedCustomer = Customers[0];
 
         ResetPaymentsForCash();
         Recalculate();
@@ -133,7 +111,8 @@ public partial class SellViewModel : ObservableObject
 
     partial void OnSelectedCustomerChanged(CustomerListItem? value)
     {
-        if (value?.PriceTierId is not null)
+        // If a real customer is picked (not Walk-in), and they have a default tier, switch to it.
+        if (value is not null && value.Id > 0 && value.PriceTierId is not null)
         {
             SelectedPriceTierId = value.PriceTierId;
         }
@@ -320,7 +299,6 @@ public partial class SellViewModel : ObservableObject
     [RelayCommand]
     private async Task CompleteSaleAsync()
     {
-        _logger.LogInformation("CompleteSale clicked. Lines={Lines} Payments={Payments} Paid={Paid} Total={Total}", Lines.Count, Payments.Count, PaidCents, TotalCents);
         ErrorMessage = "";
 
         if (Lines.Count == 0)
@@ -342,6 +320,16 @@ public partial class SellViewModel : ObservableObject
         if (PaidCents < TotalCents)
         {
             ErrorMessage = $"Payment is short by {new Pos.Domain.Money(TotalCents - PaidCents)}.";
+            return;
+        }
+
+        // Credit validation
+        bool hasCredit = Payments.Any(p => p.MethodCode == "CREDIT" && p.AmountCents > 0);
+        int? customerId = SelectedCustomer?.Id == 0 ? null : SelectedCustomer?.Id;
+
+        if (hasCredit && customerId is null)
+        {
+            ErrorMessage = "Credit sales require a named customer. Select one from the dropdown.";
             return;
         }
 
@@ -367,7 +355,7 @@ public partial class SellViewModel : ObservableObject
                 .ToArray();
 
             SaleRequest request = new(
-                CustomerId: SelectedCustomer?.Id,
+                CustomerId: customerId,
                 PriceTierId: SelectedPriceTierId,
                 BusinessDate: DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 Lines: lineReqs,
@@ -407,12 +395,10 @@ public partial class SellViewModel : ObservableObject
         foreach (CartLineViewModel l in Lines) l.Changed -= OnLineChanged;
         Lines.Clear();
         ResetPaymentsForCash();
-        SelectedCustomer = null;
+        SelectedCustomer = Customers.FirstOrDefault(); // Reset to Walk-in
         ErrorMessage = "";
         Recalculate();
     }
 
     public sealed record PriceTierOption(int Id, string Name);
 }
-
-

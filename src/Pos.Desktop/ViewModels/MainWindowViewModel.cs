@@ -9,41 +9,41 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly ProductsViewModel _products;
     private readonly ReceiveGoodsViewModel _receiveGoods;
     private readonly CustomersViewModel _customers;
+    private readonly SuppliersViewModel _suppliers;
     private readonly SellViewModel _sell;
     private readonly ReportsViewModel _reports;
+    private readonly SettingsViewModel _settings;
 
-    [ObservableProperty]
-    private object? currentView;
-
-    [ObservableProperty]
-    private string currentTitle = "Dashboard";
-
-    [ObservableProperty]
-    private string selectedNav = "Dashboard";
-
-    [ObservableProperty]
-    private string userLabel = "Not signed in";
+    [ObservableProperty] private object? currentView;
+    [ObservableProperty] private string currentTitle = "Dashboard";
+    [ObservableProperty] private string selectedNav = "Dashboard";
+    [ObservableProperty] private string userLabel = "Not signed in";
 
     public MainWindowViewModel(
         DashboardViewModel dashboard,
         ProductsViewModel products,
         ReceiveGoodsViewModel receiveGoods,
         CustomersViewModel customers,
+        SuppliersViewModel suppliers,
         SellViewModel sell,
-        ReportsViewModel reports)
+        ReportsViewModel reports,
+        SettingsViewModel settings)
     {
         _dashboard = dashboard;
         _products = products;
         _receiveGoods = receiveGoods;
         _customers = customers;
+        _suppliers = suppliers;
         _sell = sell;
         _reports = reports;
+        _settings = settings;
         ShowDashboard();
     }
 
     [RelayCommand]
     private void ShowDashboard()
     {
+        _ = _dashboard.LoadAsync();
         CurrentView = _dashboard;
         CurrentTitle = "Dashboard";
         SelectedNav = "Dashboard";
@@ -86,6 +86,15 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task ShowSuppliersAsync()
+    {
+        await _suppliers.RefreshAsync();
+        CurrentView = _suppliers;
+        CurrentTitle = "Suppliers";
+        SelectedNav = "Suppliers";
+    }
+
+    [RelayCommand]
     private async Task ShowReportsAsync()
     {
         await _reports.LoadAsync();
@@ -95,12 +104,11 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ShowSettings() => NavigateToPlaceholder("Settings", "Shop profile, printer and backup settings will appear here.");
-
-    private void NavigateToPlaceholder(string title, string message)
+    private void ShowSettings()
     {
-        CurrentView = new PlaceholderViewModel(title, message);
-        CurrentTitle = title;
-        SelectedNav = title;
+        _ = _settings.LoadAsync();
+        CurrentView = _settings;
+        CurrentTitle = "Settings";
+        SelectedNav = "Settings";
     }
 }

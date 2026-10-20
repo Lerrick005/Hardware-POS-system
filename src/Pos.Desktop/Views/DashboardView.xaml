@@ -1,25 +1,283 @@
 ﻿<UserControl x:Class="Pos.Desktop.Views.DashboardView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="clr-namespace:Pos.Desktop.ViewModels">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="24">
-            <TextBlock Text="{Binding Greeting}" Style="{StaticResource DisplayText}" />
-            <TextBlock Text="{Binding Subtitle}" Style="{StaticResource CaptionText}" Margin="0,4,0,20" />
+        <Grid Margin="32,28,32,24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <Border Style="{StaticResource Card}">
+            <!-- Header -->
+            <Grid Grid.Row="0" Margin="0,0,0,24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
                 <StackPanel>
-                    <TextBlock Text="Setup checklist" Style="{StaticResource TitleText}" />
-                    <TextBlock Text="Work through these to be ready on day one." Style="{StaticResource CaptionText}" Margin="0,4,0,16" />
-                    <ItemsControl ItemsSource="{Binding Checklist}">
+                    <TextBlock Text="{Binding Greeting}" Style="{StaticResource Text.Display}" />
+                    <TextBlock Text="{Binding TodayLabel}" Style="{StaticResource Text.Body}"
+                               Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,4,0,0" />
+                </StackPanel>
+                <Button Grid.Column="1" Style="{StaticResource Button.Secondary}"
+                        Command="{Binding RefreshCommand}" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{StaticResource Icon.Refresh}" FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBlock Text="Refresh" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <!-- SETUP STATE (new shop) -->
+            <Border Grid.Row="1" Margin="0,0,0,20">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource Card}">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ShowSetupState}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <StackPanel>
+                    <TextBlock Text="Let's get your shop ready" Style="{StaticResource Text.Title}" />
+                    <TextBlock Text="Work through these steps to start selling."
+                               Style="{StaticResource Text.Body}"
+                               Foreground="{StaticResource Brush.Text.Secondary}"
+                               Margin="0,4,0,16" />
+
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{StaticResource Icon.Add}" FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="16" Foreground="{StaticResource Brush.Accent}"
+                                   VerticalAlignment="Center" Margin="0,0,12,0" />
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Add your first product" Style="{StaticResource Text.Body}" FontWeight="SemiBold" />
+                            <TextBlock Text="Name, code, and a selling price." Style="{StaticResource Text.Caption}" />
+                        </StackPanel>
+                        <Button Grid.Column="2" Content="Go to Products" Command="{Binding GoProductsCommand}"
+                                Style="{StaticResource Button.Secondary}" Padding="12,6" />
+                    </Grid>
+
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{StaticResource Icon.Box}" FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="16" Foreground="{StaticResource Brush.Accent}"
+                                   VerticalAlignment="Center" Margin="0,0,12,0" />
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Record a delivery" Style="{StaticResource Text.Body}" FontWeight="SemiBold" />
+                            <TextBlock Text="Put physical stock into the system." Style="{StaticResource Text.Caption}" />
+                        </StackPanel>
+                        <Button Grid.Column="2" Content="Go to Stock" Command="{Binding GoStockCommand}"
+                                Style="{StaticResource Button.Secondary}" Padding="12,6" />
+                    </Grid>
+
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{StaticResource Icon.People}" FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="16" Foreground="{StaticResource Brush.Accent}"
+                                   VerticalAlignment="Center" Margin="0,0,12,0" />
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Add a credit customer" Style="{StaticResource Text.Body}" FontWeight="SemiBold" />
+                            <TextBlock Text="Only needed for customers who pay later." Style="{StaticResource Text.Caption}" />
+                        </StackPanel>
+                        <Button Grid.Column="2" Content="Go to Customers" Command="{Binding GoCustomersCommand}"
+                                Style="{StaticResource Button.Secondary}" Padding="12,6" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- TODAY'S NUMBERS (trading shop) -->
+            <Grid Grid.Row="2" Margin="0,0,0,20">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ShowSetupState}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource KpiCard}">
+                    <StackPanel>
+                        <TextBlock Text="TODAY'S SALES" Style="{StaticResource Text.Caption}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <TextBlock Text="{Binding TodaySalesDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="26" />
+                            <TextBlock Text=" KES" Style="{StaticResource Text.Body}" VerticalAlignment="Bottom" Margin="4,0,0,4"
+                                       Foreground="{StaticResource Brush.Text.Secondary}" />
+                        </StackPanel>
+                        <TextBlock Margin="0,4,0,0" Style="{StaticResource Text.Caption}">
+                            <Run Text="{Binding TodayTransactionsDisplay, Mode=OneWay}" />
+                            <Run Text=" sales" />
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource KpiCard}">
+                    <StackPanel>
+                        <TextBlock Text="LOW STOCK" Style="{StaticResource Text.Caption}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <TextBlock Text="{Binding LowStockCountDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="26"
+                                       Foreground="{StaticResource Brush.Warning}" />
+                            <TextBlock Text=" items" Style="{StaticResource Text.Body}" VerticalAlignment="Bottom" Margin="4,0,0,4"
+                                       Foreground="{StaticResource Brush.Text.Secondary}" />
+                        </StackPanel>
+                        <TextBlock Margin="0,4,0,0" Style="{StaticResource Text.Caption}">
+                            <Run Text="{Binding OutOfStockCountDisplay, Mode=OneWay}" />
+                            <Run Text=" out of stock" />
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="4" Style="{StaticResource KpiCard}">
+                    <StackPanel>
+                        <TextBlock Text="OWED TO YOU" Style="{StaticResource Text.Caption}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <TextBlock Text="{Binding DebtorsTotalDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="26"
+                                       Foreground="{StaticResource Brush.Danger}" />
+                            <TextBlock Text=" KES" Style="{StaticResource Text.Body}" VerticalAlignment="Bottom" Margin="4,0,0,4"
+                                       Foreground="{StaticResource Brush.Text.Secondary}" />
+                        </StackPanel>
+                        <TextBlock Margin="0,4,0,0" Style="{StaticResource Text.Caption}">
+                            <Run Text="{Binding DebtorCountDisplay, Mode=OneWay}" />
+                            <Run Text=" customers owe" />
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="6" Style="{StaticResource KpiCard}">
+                    <StackPanel>
+                        <TextBlock Text="TODAY BY METHOD" Style="{StaticResource Text.Caption}" />
+                        <StackPanel Margin="0,6,0,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                <TextBlock Text="Cash  " Style="{StaticResource Text.Caption}" Width="40" />
+                                <TextBlock Text="{Binding TodayCashDisplay}" Style="{StaticResource Text.Numeric}" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                <TextBlock Text="M-Pesa" Style="{StaticResource Text.Caption}" Width="40" />
+                                <TextBlock Text="{Binding TodayMpesaDisplay}" Style="{StaticResource Text.Numeric}" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Credit" Style="{StaticResource Text.Caption}" Width="40" />
+                                <TextBlock Text="{Binding TodayCreditDisplay}" Style="{StaticResource Text.Numeric}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- LOW STOCK LIST -->
+            <Border Grid.Row="3" Margin="0,0,0,20">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource Card}">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding LowStock.Count}" Value="0">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Needs restocking soon" Style="{StaticResource Text.Subtitle}" />
+                            <TextBlock Text="Products at or below their reorder level."
+                                       Style="{StaticResource Text.Caption}" Margin="0,2,0,0" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="Record a delivery"
+                                Command="{Binding GoStockCommand}"
+                                Style="{StaticResource Button.Primary}" Padding="14,7" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding LowStock}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <CheckBox Content="{Binding}" Margin="0,6" />
+                                <Grid Margin="0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding ProductName}" Style="{StaticResource Text.Body}" />
+                                    <TextBlock Grid.Column="1" Style="{StaticResource Text.Numeric}"
+                                               Foreground="{StaticResource Brush.Warning}" FontWeight="SemiBold">
+                                        <Run Text="{Binding StockMilli, Converter={StaticResource MilliToUnitsConverter}, Mode=OneWay}" />
+                                        <Run Text=" left" />
+                                    </TextBlock>
+                                </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </StackPanel>
             </Border>
-        </StackPanel>
+
+            <!-- QUICK ACTIONS -->
+            <Grid Grid.Row="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0" Command="{Binding GoSellCommand}"
+                        Style="{StaticResource Button.Primary.Large}" Height="56">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{StaticResource Icon.Cart}" FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="18" VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <TextBlock Text="Start a sale" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="2" Command="{Binding GoReportsCommand}"
+                        Style="{StaticResource Button.Secondary}" Height="56">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{StaticResource Icon.Chart}" FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="16" VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <TextBlock Text="View reports" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="4" Command="{Binding GoCustomersCommand}"
+                        Style="{StaticResource Button.Secondary}" Height="56">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{StaticResource Icon.People}" FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="16" VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <TextBlock Text="Customers" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Grid>
     </ScrollViewer>
 </UserControl>
+
