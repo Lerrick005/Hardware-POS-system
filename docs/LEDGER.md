@@ -63,3 +63,19 @@ Never delete rows. New requirements get an X- prefix.
 | M2-14 | Receive Goods list view (GRN, date, supplier, lines, total) | DONE | dotnet run confirmed; empty state renders; Stock nav routes correctly |
 | M2-15 | New receipt compose dialog | TODO | next slice |
 | M2-16 | Supplier directory + picker | TODO | schema has suppliers; no repo/UI yet |
+
+## M3 Customers (CRUD-complete per ADR-0012)
+
+| ID | Requirement | Status | Evidence |
+|---|---|---|---|
+| M3-01 | Customer entity + LedgerEntry domain | DONE | Pos.Domain.Customers; builds green |
+| M3-02 | ICustomerRepository + Dapper impl | DONE | CustomerRepositoryTests 8/8; CustomerRepositoryAtomicityTests 5/5 |
+| M3-03 | ICustomerAccountService + impl | DONE | CustomerAccountServiceTests 8/8; payments validated, method checked, atomic |
+| M3-04 | Customer list with search + debtors filter | DONE | CustomersView renders; real DB query; dots in StatusText show total owed |
+| M3-05 | Add customer with opening balance (atomic) | DONE | Mary created via UI; opening balance ledger entry written; atomicity proven by 2 test cases |
+| M3-06 | Edit customer | DONE | Mary's phone changed 0722000111 -> 0733000222 in DB |
+| M3-07 | Remove customer (archive, with balance guard) | DONE | Mary's balance 0 after payment; Remove -> is_active = 0 confirmed; guard proved earlier (blocked while 12,500 owed) |
+| M3-08 | Record payment (cash, methods, M-Pesa reference) | DONE | Ledger shows PAYMENT -1,250,000 CASH; audit CUSTOMER_PAYMENT logged |
+| M3-09 | ConfirmDialog reusable component | DONE | Used for archive guard + archive confirm; available to all future pages |
+| M3-10 | Statement view (running balance, printable) | TODO | last remaining Customers item |
+| M3-11 | Audit entity_type consistency (currently 'customer' vs 'customer_ledger') | TODO | fix in batch with Products audit cleanup |

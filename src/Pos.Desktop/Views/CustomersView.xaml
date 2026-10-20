@@ -9,7 +9,6 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- ===== Header ===== -->
         <Grid Grid.Row="0" Margin="0,0,0,24">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -50,7 +49,6 @@
             </StackPanel>
         </Grid>
 
-        <!-- ===== Search bar + debtors toggle ===== -->
         <Grid Grid.Row="1" Margin="0,0,0,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -93,7 +91,6 @@
                       FontSize="{StaticResource Font.Size.Body}" />
         </Grid>
 
-        <!-- ===== Grid / empty state ===== -->
         <Grid Grid.Row="2">
             <Border Background="{StaticResource Brush.Surface}"
                     BorderBrush="{StaticResource Brush.Border.Default}"
@@ -117,19 +114,19 @@
                           Style="{StaticResource DataGrid.Default}">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
-                        <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="150" />
-                        <DataGridTextColumn Header="Price type" Binding="{Binding PriceTierName}" Width="120" />
+                        <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="140" />
+                        <DataGridTextColumn Header="Price type" Binding="{Binding PriceTierName}" Width="110" />
                         <DataGridTextColumn Header="Credit limit"
                                             Binding="{Binding CreditLimitCents, StringFormat={}{0:N0}}"
-                                            Width="120"
+                                            Width="110"
                                             CellStyle="{StaticResource DataGrid.NumericCell}"
                                             HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
                         <DataGridTextColumn Header="Balance"
                                             Binding="{Binding BalanceCents, StringFormat={}{0:N0}}"
-                                            Width="120"
+                                            Width="110"
                                             CellStyle="{StaticResource DataGrid.NumericCell}"
                                             HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
-                        <DataGridTemplateColumn Header="" Width="190">
+                        <DataGridTemplateColumn Header="" Width="260">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -142,6 +139,12 @@
                                                 Foreground="{StaticResource Brush.Accent}" />
                                         <Button Content="Edit"
                                                 Command="{Binding DataContext.EditCustomerCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource Button.Ghost}"
+                                                Height="28" Padding="10,0"
+                                                Margin="0,0,4,0" />
+                                        <Button Content="Statement"
+                                                Command="{Binding DataContext.ViewStatementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
                                                 Style="{StaticResource Button.Ghost}"
                                                 Height="28" Padding="10,0"
@@ -211,7 +214,6 @@
             </Border>
         </Grid>
 
-        <!-- ===== Footer ===== -->
         <Grid Grid.Row="3" Margin="0,12,0,0">
             <TextBlock Text="{Binding StatusText}"
                        Style="{StaticResource Text.Caption}"

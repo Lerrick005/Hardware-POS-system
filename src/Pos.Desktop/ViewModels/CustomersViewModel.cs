@@ -29,6 +29,7 @@ public partial class CustomersViewModel : ObservableObject
 
     public Func<int?, AddCustomerView>? CreateCustomerDialog { get; set; }
     public Func<int, RecordPaymentView>? CreateRecordPaymentDialog { get; set; }
+    public Func<int, StatementView>? CreateStatementDialog { get; set; }
 
     public CustomersViewModel(ICustomerRepository repo, ILogger<CustomersViewModel> logger)
     {
@@ -168,6 +169,18 @@ public partial class CustomersViewModel : ObservableObject
         {
             await RefreshAsync();
         }
+    }
+
+    [RelayCommand]
+    private void ViewStatement(CustomerListItem? item)
+    {
+        if (item is null || CreateStatementDialog is null)
+        {
+            return;
+        }
+
+        StatementView dialog = CreateStatementDialog(item.Id);
+        dialog.ShowDialog();
     }
 
     [RelayCommand]
