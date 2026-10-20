@@ -96,3 +96,26 @@ Never delete rows. New requirements get an X- prefix.
 | DEBT-CAT-01 | Seed standard hardware categories on first install (migration 002) | IN_PROGRESS | Seed pending owner approval of category names |
 | DEBT-CAT-02 | Category management dialog: add, rename, archive | TODO | Blocks populating Category field from UI; workaround is SQL |
 | DEBT-CAT-03 | Category filter on Products page | TODO | Requires DEBT-CAT-02 first |
+
+## M3 Products (CRUD+ complete, per ADR-0012/0013)
+
+| ID | Requirement | Status | Evidence |
+|---|---|---|---|
+| M3-16 | Product list shows Retail price in shillings | DONE | DB shows 68000 cents = KES 680; grid renders via CentsToShillingsConverter |
+| M3-17 | Add/Edit product with three tier prices in one transaction | DONE | product_prices has 3 rows for product id=3 (Retail 680, Wholesale 620, Contractor 600) |
+| M3-18 | Archive product with confirmation | DONE | ConfirmDialog.CreateDanger wired; archive sets is_active=0 |
+| M3-19 | Categories management: add, rename, archive, with product-count guard | DONE | CategoriesView renders; CategoryWithCount DTO; archive blocked when products assigned |
+| M3-20 | Category dropdown populated from working data source | DONE | Products form loads categories from repo; seed migration applied |
+| M3-21 | Customer credit limit and balance columns show shillings | DONE | CentsToShillingsConverter applied to both columns |
+
+## M4 Sell (in progress)
+
+| ID | Requirement | Status | Evidence |
+|---|---|---|---|
+| M4-01 | Sale / SaleLine / Payment domain entities | TODO | starting now |
+| M4-02 | ISellService (atomic sale completion) | TODO | |
+| M4-03 | Sale service with stock movements + credit ledger | TODO | |
+| M4-04 | Sell screen with product search, cart, price tier | TODO | |
+| M4-05 | Payment: cash with change, M-Pesa code, credit, split | TODO | |
+| M4-06 | Receipt view + print stub | TODO | |
+| M4-07 | Cash session link (open/close deferred to M4b) | TODO | |
