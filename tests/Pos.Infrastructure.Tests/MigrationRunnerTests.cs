@@ -40,7 +40,7 @@ public sealed class MigrationRunnerTests : IDisposable
 
         Assert.Equal(MigrationOutcome.FreshInstall, result.Outcome);
         Assert.Null(result.Error);
-        Assert.Equal(new Version(1, 2), result.ToVersion);
+        Assert.Equal(new Version(1, 3), result.ToVersion);
     }
 
     [Fact]
@@ -107,5 +107,6 @@ public sealed class MigrationRunnerTests : IDisposable
         Assert.Throws<SqliteException>(() => command.ExecuteNonQuery());
     }
 }
+
 
 

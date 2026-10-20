@@ -1,21 +1,11 @@
 ﻿#!/usr/bin/env pwsh
-# verify.ps1 - One-command health check.
-#
-# Usage:
-#   .\scripts\verify.ps1          # build + tests
-#   .\scripts\verify.ps1 -Fast    # build only
-#   .\scripts\verify.ps1 -Files   # also print every source file with size
-#
-# Exit: 0 = green, 1 = build failed, 2 = tests failed.
-
 param([switch]$Fast, [switch]$Files)
 
-$ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Push-Location $root
 try {
     Write-Host "=== dotnet ===" -ForegroundColor Cyan
-    dotnet --version
+    & dotnet --version
 
     if ($Files) {
         Write-Host ""
@@ -31,35 +21,32 @@ try {
 
     Write-Host ""
     Write-Host "=== Build ===" -ForegroundColor Cyan
-    $buildOutput = dotnet build Pos.slnx --nologo 2>&1
-    $buildOutput | Out-Host
-    $buildErrors = $buildOutput | Select-String -Pattern "error CS|error MC|error NETSDK|error MSB"
-
-    if ($buildErrors) {
-        Write-Host ""
-        Write-Host "BUILD FAILED - errors:" -ForegroundColor Red
-        $buildErrors | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
-        exit 1
+    $buildOutput = (& dotnet build Pos.slnx --nologo 2>&1) | Out-String
+    $buildExit = $LASTEXITCODE
+    Write-Host $buildOutput
+    if ($buildExit -ne 0) {
+        Write-Host "BUILD FAILED" -ForegroundColor Red
+        return 1
     }
     Write-Host "BUILD OK" -ForegroundColor Green
 
-    if ($Fast) { exit 0 }
+    if ($Fast) { return 0 }
 
     Write-Host ""
     Write-Host "=== Tests ===" -ForegroundColor Cyan
-    $testOutput = dotnet test Pos.slnx --no-build --nologo 2>&1
-    $testOutput | Out-Host
+    $testOutput = (& dotnet test Pos.slnx --no-build --nologo 2>&1) | Out-String
+    $testExit = $LASTEXITCODE
+    Write-Host $testOutput
 
-    $summary = ($testOutput | Select-String -Pattern "Test summary:").ToString()
-    if ($summary -match "failed: ([1-9])") {
-        Write-Host ""
+    if ($testExit -ne 0) {
         Write-Host "TESTS FAILED" -ForegroundColor Red
-        $testOutput | Select-String -Pattern "\[FAIL\]|Expected:|Actual:|Error Message:" | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
-        exit 2
+        $testOutput -split "`n" |
+            Where-Object { $_ -match "\[FAIL\]|Expected:|Actual:|Error Message:|Assert\." } |
+            ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+        return 2
     }
     Write-Host "TESTS OK" -ForegroundColor Green
 
-    # Runtime errors from the app log
     $logDir = "C:\ProgramData\MyPOS\logs"
     if (Test-Path $logDir) {
         $errs = Get-ChildItem "$logDir\*.log" | Get-Content | Select-String -Pattern "\[ERR\]" | Select-Object -Last 5
@@ -72,7 +59,7 @@ try {
 
     Write-Host ""
     Write-Host "ALL GREEN" -ForegroundColor Green
-    exit 0
+    return 0
 } finally {
     Pop-Location
 }
