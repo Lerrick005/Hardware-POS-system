@@ -496,6 +496,163 @@ public sealed class ProductRepository : IProductRepository
             throw;
         }
     }
+
+    public async Task<int> SaveProductWithAllPricesAsync(
+        Product product,
+        string? barcode,
+        IReadOnlyDictionary<int, long> baseTierPrices,
+        IReadOnlyList<ProductUnitSave> alternativeUnits,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+        ArgumentNullException.ThrowIfNull(baseTierPrices);
+        ArgumentNullException.ThrowIfNull(alternativeUnits);
+
+        foreach (var (tierId, priceCents) in baseTierPrices)
+        {
+            if (tierId <= 0) throw new ArgumentException($"Tier id must be positive: {tierId}.", nameof(baseTierPrices));
+            if (priceCents < 0) throw new ArgumentOutOfRangeException(nameof(baseTierPrices), "Price cannot be negative.");
+        }
+
+        foreach (ProductUnitSave u in alternativeUnits)
+        {
+            if (u.UnitId <= 0) throw new ArgumentException($"Unit id must be positive: {u.UnitId}.", nameof(alternativeUnits));
+            if (u.FactorMilli <= 0) throw new ArgumentException($"Factor must be positive for unit {u.UnitId}.", nameof(alternativeUnits));
+            if (u.UnitId == product.BaseUnitId) throw new ArgumentException("Cannot add the base unit as an alternative.", nameof(alternativeUnits));
+            foreach (ProductUnitPriceSave p in u.Prices)
+            {
+                if (p.PriceCents < 0) throw new ArgumentOutOfRangeException(nameof(alternativeUnits), "Price cannot be negative.");
+            }
+        }
+
+        // No duplicates by unit id
+        var distinctUnits = alternativeUnits.GroupBy(u => u.UnitId).ToList();
+        if (distinctUnits.Any(g => g.Count() > 1))
+        {
+            throw new ArgumentException("Duplicate unit ids in alternativeUnits.", nameof(alternativeUnits));
+        }
+
+        using SqliteConnection connection = _factory.CreateOpen();
+        using SqliteTransaction tx = connection.BeginTransaction();
+        try
+        {
+            int productId;
+
+            if (product.Id == 0)
+            {
+                long newId = await connection.ExecuteScalarAsync<long>(new CommandDefinition(@"
+                    INSERT INTO products(uuid, sku, name, category_id, base_unit_id, tax_class_id,
+                                         track_stock, reorder_level_milli, is_active, import_batch_id)
+                    VALUES ($Uuid, $Sku, $Name, $CategoryId, $BaseUnitId, $TaxClassId,
+                            $TrackStock, $ReorderLevelMilli, $IsActive, $ImportBatchId)
+                    RETURNING id",
+                    product, tx, cancellationToken: ct));
+                productId = (int)newId;
+
+                if (!string.IsNullOrWhiteSpace(barcode))
+                {
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        "INSERT INTO product_barcodes(barcode, product_id, is_primary) VALUES ($Barcode, $ProductId, 1)",
+                        new { Barcode = barcode, ProductId = productId },
+                        tx, cancellationToken: ct));
+                }
+            }
+            else
+            {
+                productId = product.Id;
+                await connection.ExecuteAsync(new CommandDefinition(@"
+                    UPDATE products
+                       SET sku                 = $Sku,
+                           name                = $Name,
+                           category_id         = $CategoryId,
+                           base_unit_id        = $BaseUnitId,
+                           tax_class_id        = $TaxClassId,
+                           track_stock         = $TrackStock,
+                           reorder_level_milli = $ReorderLevelMilli,
+                           is_active           = $IsActive,
+                           updated_at          = strftime('%Y-%m-%dT%H:%M:%SZ','now')
+                     WHERE id = $Id",
+                    product, tx, cancellationToken: ct));
+            }
+
+            // Base unit prices
+            foreach (var (tierId, priceCents) in baseTierPrices)
+            {
+                await connection.ExecuteAsync(new CommandDefinition(@"
+                    INSERT INTO product_prices(product_id, tier_id, unit_id, price_cents)
+                    VALUES ($productId, $tierId, $unitId, $priceCents)
+                    ON CONFLICT(product_id, tier_id, unit_id)
+                    DO UPDATE SET price_cents = excluded.price_cents",
+                    new { productId, tierId, unitId = product.BaseUnitId, priceCents },
+                    tx, cancellationToken: ct));
+            }
+
+            // Alternative units: upsert each one + its prices
+            foreach (ProductUnitSave unitSave in alternativeUnits)
+            {
+                await connection.ExecuteAsync(new CommandDefinition(@"
+                    INSERT INTO product_units(product_id, unit_id, factor_milli)
+                    VALUES ($productId, $unitId, $factorMilli)
+                    ON CONFLICT(product_id, unit_id)
+                    DO UPDATE SET factor_milli = excluded.factor_milli",
+                    new { productId, unitId = unitSave.UnitId, factorMilli = unitSave.FactorMilli },
+                    tx, cancellationToken: ct));
+
+                foreach (ProductUnitPriceSave price in unitSave.Prices)
+                {
+                    await connection.ExecuteAsync(new CommandDefinition(@"
+                        INSERT INTO product_prices(product_id, tier_id, unit_id, price_cents)
+                        VALUES ($productId, $tierId, $unitId, $priceCents)
+                        ON CONFLICT(product_id, tier_id, unit_id)
+                        DO UPDATE SET price_cents = excluded.price_cents",
+                        new { productId, tierId = price.TierId, unitId = unitSave.UnitId, priceCents = price.PriceCents },
+                        tx, cancellationToken: ct));
+                }
+            }
+
+            // Delete any alternative units that existed but were removed by the caller
+            int[] incomingUnitIds = alternativeUnits.Select(u => u.UnitId).Distinct().ToArray();
+
+            if (incomingUnitIds.Length == 0)
+            {
+                // No alternatives incoming — delete all existing alternatives (and their prices)
+                await connection.ExecuteAsync(new CommandDefinition(
+                    "DELETE FROM product_prices WHERE product_id = $productId AND unit_id <> $base",
+                    new { productId, @base = product.BaseUnitId }, tx, cancellationToken: ct));
+
+                await connection.ExecuteAsync(new CommandDefinition(
+                    "DELETE FROM product_units WHERE product_id = $productId",
+                    new { productId }, tx, cancellationToken: ct));
+            }
+            else
+            {
+                DynamicParameters p = new();
+                p.Add("productId", productId);
+                p.Add("base", product.BaseUnitId);
+                string[] placeholders = incomingUnitIds.Select((id, i) =>
+                {
+                    p.Add($"uid{i}", id);
+                    return $"$uid{i}";
+                }).ToArray();
+                string list = string.Join(",", placeholders);
+
+                await connection.ExecuteAsync(new CommandDefinition(
+                    $"DELETE FROM product_prices WHERE product_id = $productId AND unit_id <> $base AND unit_id NOT IN ({list})",
+                    p, tx, cancellationToken: ct));
+
+                await connection.ExecuteAsync(new CommandDefinition(
+                    $"DELETE FROM product_units WHERE product_id = $productId AND unit_id NOT IN ({list})",
+                    p, tx, cancellationToken: ct));
+            }
+
+            tx.Commit();
+            return productId;
+        }
+        catch
+        {
+            tx.Rollback();
+            throw;
+        }
+    }
+
 }
-
-
