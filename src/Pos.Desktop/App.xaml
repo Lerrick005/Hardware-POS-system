@@ -5,7 +5,9 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="DesignSystem/Tokens.xaml" />
+                <ResourceDictionary Source="DesignSystem/Icons.xaml" />
                 <ResourceDictionary Source="DesignSystem/Controls.xaml" />
+                <ResourceDictionary Source="DesignSystem/DataGridStyles.xaml" />
                 <ResourceDictionary Source="Views/ViewTemplates.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

@@ -1,0 +1,65 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- =====================================================================
+         ICON FONT + CODEPOINT DICTIONARY
+         Uses Segoe Fluent Icons (Win11) with Segoe MDL2 Assets (Win10) fallback.
+         No install required, no licensing concern, native to Windows.
+
+         Usage:
+           <TextBlock Text="{StaticResource Icon.Add}"
+                      FontFamily="{StaticResource Font.Icon}"
+                      FontSize="14" Foreground="{StaticResource Brush.Text.Primary}" />
+
+         Or as a button content in Controls.xaml (built in later files).
+         ===================================================================== -->
+
+    <FontFamily x:Key="Font.Icon">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+    <!-- ========== NAVIGATION ========== -->
+    <sys:String x:Key="Icon.Home">&#xE80F;</sys:String>
+    <sys:String x:Key="Icon.Cart">&#xE7BF;</sys:String>
+    <sys:String x:Key="Icon.Box">&#xE7B8;</sys:String>
+    <sys:String x:Key="Icon.People">&#xE716;</sys:String>
+    <sys:String x:Key="Icon.Chart">&#xE9D9;</sys:String>
+    <sys:String x:Key="Icon.Settings">&#xE713;</sys:String>
+
+    <!-- ========== ACTION ========== -->
+    <sys:String x:Key="Icon.Add">&#xE710;</sys:String>
+    <sys:String x:Key="Icon.Edit">&#xE70F;</sys:String>
+    <sys:String x:Key="Icon.Delete">&#xE74D;</sys:String>
+    <sys:String x:Key="Icon.Search">&#xE721;</sys:String>
+    <sys:String x:Key="Icon.Refresh">&#xE72C;</sys:String>
+    <sys:String x:Key="Icon.Save">&#xE74E;</sys:String>
+    <sys:String x:Key="Icon.Cancel">&#xE711;</sys:String>
+    <sys:String x:Key="Icon.Close">&#xE8BB;</sys:String>
+    <sys:String x:Key="Icon.Check">&#xE73E;</sys:String>
+    <sys:String x:Key="Icon.More">&#xE712;</sys:String>
+    <sys:String x:Key="Icon.Filter">&#xE71C;</sys:String>
+    <sys:String x:Key="Icon.Download">&#xE896;</sys:String>
+    <sys:String x:Key="Icon.Upload">&#xE898;</sys:String>
+    <sys:String x:Key="Icon.Print">&#xE749;</sys:String>
+    <sys:String x:Key="Icon.Copy">&#xE8C8;</sys:String>
+
+    <!-- ========== STATUS ========== -->
+    <sys:String x:Key="Icon.Warning">&#xE7BA;</sys:String>
+    <sys:String x:Key="Icon.Info">&#xE946;</sys:String>
+    <sys:String x:Key="Icon.Error">&#xEA39;</sys:String>
+    <sys:String x:Key="Icon.Success">&#xE930;</sys:String>
+
+    <!-- ========== DIRECTION ========== -->
+    <sys:String x:Key="Icon.ChevronRight">&#xE76C;</sys:String>
+    <sys:String x:Key="Icon.ChevronDown">&#xE70D;</sys:String>
+    <sys:String x:Key="Icon.ChevronLeft">&#xE76B;</sys:String>
+    <sys:String x:Key="Icon.ChevronUp">&#xE70E;</sys:String>
+    <sys:String x:Key="Icon.ArrowRight">&#xE72A;</sys:String>
+    <sys:String x:Key="Icon.ArrowLeft">&#xE72B;</sys:String>
+
+    <!-- ========== MONEY / DOCS ========== -->
+    <sys:String x:Key="Icon.Receipt">&#xE8A1;</sys:String>
+    <sys:String x:Key="Icon.Cash">&#xE8C7;</sys:String>
+    <sys:String x:Key="Icon.Card">&#xE8C7;</sys:String>
+    <sys:String x:Key="Icon.Document">&#xE8A5;</sys:String>
+    <sys:String x:Key="Icon.Calendar">&#xE787;</sys:String>
+</ResourceDictionary>

@@ -1,66 +1,183 @@
 ﻿<UserControl x:Class="Pos.Desktop.Views.ProductsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid Margin="24">
+    <Grid Margin="32,28,32,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0">
-            <TextBlock Text="Products" Style="{StaticResource DisplayText}" />
-            <TextBlock Text="Search by name or code. Archived products are hidden." Style="{StaticResource CaptionText}" Margin="0,4,0,16" />
-        </StackPanel>
-
-        <Grid Grid.Row="1" Margin="0,0,0,12">
+        <!-- ===== Header ===== -->
+        <Grid Grid.Row="0" Margin="0,0,0,24">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Background="White"
-                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
-                    CornerRadius="{StaticResource RadiusMedium}">
-                <TextBox Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}"
-                         BorderThickness="0" Padding="12,10" FontSize="{StaticResource FontSizeBody}"
-                         Background="Transparent"
-                         VerticalContentAlignment="Center" />
-            </Border>
+            <StackPanel>
+                <TextBlock Text="Products" Style="{StaticResource Text.Display}" />
+                <TextBlock Text="Manage your catalog, prices and stock levels."
+                           Style="{StaticResource Text.Body}"
+                           Foreground="{StaticResource Brush.Text.Secondary}"
+                           Margin="0,4,0,0" />
+            </StackPanel>
 
-            <TextBlock Grid.Column="1" Text="{Binding StatusText}"
-                       Style="{StaticResource CaptionText}"
-                       VerticalAlignment="Center" Margin="16,0" />
-
-            <Button Grid.Column="2" Content="+ Add product" Command="{Binding AddProductCommand}"
-                    Style="{StaticResource PrimaryButton}" Padding="14,8" Margin="0,0,8,0" />
-
-            <Button Grid.Column="3" Content="Refresh" Command="{Binding RefreshCommand}"
-                    Padding="14,8" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{StaticResource Button.Secondary}"
+                        Command="{Binding RefreshCommand}"
+                        Margin="0,0,8,0" ToolTip="Refresh">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{StaticResource Icon.Refresh}"
+                                   FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="14" VerticalAlignment="Center"
+                                   Margin="0,0,8,0" />
+                        <TextBlock Text="Refresh" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource Button.Primary}"
+                        Command="{Binding AddProductCommand}"
+                        ToolTip="Add a new product">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{StaticResource Icon.Add}"
+                                   FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="14" VerticalAlignment="Center"
+                                   Margin="0,0,8,0" />
+                        <TextBlock Text="Add product" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </Grid>
 
-        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0">
-            <DataGrid ItemsSource="{Binding Products}"
-                      AutoGenerateColumns="False"
-                      CanUserAddRows="False"
-                      CanUserDeleteRows="False"
-                      IsReadOnly="True"
-                      HeadersVisibility="Column"
-                      GridLinesVisibility="Horizontal"
-                      Background="Transparent"
-                      BorderThickness="0"
-                      RowHeight="36"
-                      AlternatingRowBackground="#FAFBFC">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Code" Binding="{Binding Sku}" Width="140" />
-                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
-                    <DataGridTextColumn Header="Stock (base units)" Binding="{Binding Stock}" Width="160" />
-                    <DataGridTextColumn Header="Avg cost" Binding="{Binding AvgCost}" Width="120" />
-                    <DataGridCheckBoxColumn Header="Active" Binding="{Binding IsActive}" Width="70" IsReadOnly="True" />
-                </DataGrid.Columns>
-            </DataGrid>
+        <!-- ===== Search bar ===== -->
+        <Border Grid.Row="1"
+                Background="{StaticResource Brush.Surface}"
+                BorderBrush="{StaticResource Brush.Border.Default}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource Radius.Medium}"
+                Height="36"
+                Margin="0,0,0,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="{StaticResource Icon.Search}"
+                           FontFamily="{StaticResource Font.Icon}"
+                           FontSize="14"
+                           Foreground="{StaticResource Brush.Text.Tertiary}"
+                           VerticalAlignment="Center"
+                           Margin="12,0,0,0" />
+                <TextBox Grid.Column="1"
+                         Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}"
+                         BorderThickness="0"
+                         Background="Transparent"
+                         Padding="8,0"
+                         FontSize="{StaticResource Font.Size.Body}"
+                         VerticalContentAlignment="Center" />
+            </Grid>
         </Border>
+
+        <!-- ===== Content: grid OR empty state ===== -->
+        <Grid Grid.Row="2">
+            <!-- Populated list -->
+            <Border Background="{StaticResource Brush.Surface}"
+                    BorderBrush="{StaticResource Brush.Border.Default}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource Radius.Large}">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding Products.Count}" Value="0" />
+                                    <Condition Binding="{Binding IsBusy}" Value="False" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <DataGrid ItemsSource="{Binding Products}"
+                          Style="{StaticResource DataGrid.Default}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Code" Binding="{Binding Sku}" Width="130" />
+                        <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
+                        <DataGridTextColumn Header="Stock"
+                                            Binding="{Binding Stock}"
+                                            Width="110"
+                                            CellStyle="{StaticResource DataGrid.NumericCell}"
+                                            HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                        <DataGridTextColumn Header="Avg cost"
+                                            Binding="{Binding AvgCost}"
+                                            Width="120"
+                                            CellStyle="{StaticResource DataGrid.NumericCell}"
+                                            HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                        <DataGridCheckBoxColumn Header="Active" Binding="{Binding IsActive}" Width="80" IsReadOnly="True" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <!-- Empty state -->
+            <Border Background="{StaticResource Brush.Surface}"
+                    BorderBrush="{StaticResource Brush.Border.Default}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource Radius.Large}">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding Products.Count}" Value="0" />
+                                    <Condition Binding="{Binding IsBusy}" Value="False" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Visible" />
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                            MaxWidth="420" Margin="24">
+                    <TextBlock Text="{StaticResource Icon.Box}"
+                               FontFamily="{StaticResource Font.Icon}"
+                               FontSize="56"
+                               Foreground="{StaticResource Brush.Text.Tertiary}"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="No products yet"
+                               Style="{StaticResource Text.Title}"
+                               HorizontalAlignment="Center"
+                               Margin="0,16,0,0" />
+                    <TextBlock Text="Add your first product to start selling."
+                               Style="{StaticResource Text.Body}"
+                               Foreground="{StaticResource Brush.Text.Secondary}"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               Margin="0,6,0,20" />
+                    <Button Style="{StaticResource Button.Primary}"
+                            Command="{Binding AddProductCommand}"
+                            HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{StaticResource Icon.Add}"
+                                       FontFamily="{StaticResource Font.Icon}"
+                                       FontSize="14"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,8,0" />
+                            <TextBlock Text="Add your first product" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ===== Footer ===== -->
+        <Grid Grid.Row="3" Margin="0,12,0,0">
+            <TextBlock Text="{Binding StatusText}"
+                       Style="{StaticResource Text.Caption}"
+                       VerticalAlignment="Center" />
+        </Grid>
     </Grid>
 </UserControl>

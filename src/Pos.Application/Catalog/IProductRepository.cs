@@ -20,4 +20,10 @@ public interface IProductRepository
     /// If the barcode already exists, throws and the product is not created.
     /// </summary>
     Task<int> InsertWithBarcodeAsync(Product product, string? barcode, CancellationToken ct = default);
+
+    /// <summary>Returns the price for a product at a given tier, or null if not set.</summary>
+    Task<long?> GetPriceAsync(int productId, int tierId, CancellationToken ct = default);
+
+    /// <summary>Inserts or updates a product's price at a given tier.</summary>
+    Task UpsertPriceAsync(int productId, int tierId, long priceCents, CancellationToken ct = default);
 }

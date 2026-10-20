@@ -51,14 +51,23 @@ public partial class App : System.Windows.Application
         services.AddSingleton<ReceiveGoodsViewModel>();
         services.AddTransient<AddProductViewModel>();
         services.AddTransient<AddProductView>();
+        services.AddTransient<NewReceiptViewModel>();
+        services.AddTransient<NewReceiptView>();
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<MainWindow>();
 
         _services = services.BuildServiceProvider();
 
-        // Wire dialog factories (VMs do not depend on the DI container directly).
         ProductsViewModel productsVm = _services.GetRequiredService<ProductsViewModel>();
         productsVm.CreateAddProductDialog = () => _services.GetRequiredService<AddProductView>();
+
+        ReceiveGoodsViewModel receiveVm = _services.GetRequiredService<ReceiveGoodsViewModel>();
+        receiveVm.CreateNewReceiptDialog = () =>
+        {
+            NewReceiptView dialog = _services.GetRequiredService<NewReceiptView>();
+            dialog.Owner = MainWindow;
+            return dialog.ShowDialog() == true;
+        };
 
         MigrationRunner runner = _services.GetRequiredService<MigrationRunner>();
         MigrationResult migration = runner.Run();

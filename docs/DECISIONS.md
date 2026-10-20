@@ -57,3 +57,39 @@ Format: ADR-lite. Newest at top. Never delete; supersede instead.
 - Context: Anonymous-type property names must equal the `$name` tokens in SQL (case-sensitive as written). Projected declarators like `new { Id = line.ProductId }` do not satisfy `$ProductId`. Missing bindings throw at execution, not compile time.
 - Decision: Spell anon-object members to match every `$name` exactly; never reuse a property for a differently named token. Test coverage catches regressions because transaction tests execute the SQL for real.
 - Consequences: Anonymous objects are verbose but explicit; do not shorten at the cost of mismatch.
+
+## ADR-0010: Shop-language labels only
+- Date: 2026-10-20
+- Status: Accepted
+- Context: First-render of Products page used "SKU", "Base unit", "Reorder level", "Avg cost", "Business date", "GRN", "Supplier ref". These are developer terms. Primary users are shop workers and owners, many of whom are not fluent in English business jargon. UI must use words used at the counter.
+- Decision: Apply the following translation across all UI text. Database column names stay as-is (internal).
+- Locked dictionary:
+  | Dev term | UI term |
+  |---|---|
+  | SKU | Code |
+  | Base unit | Sold by |
+  | Reorder level | Low stock alert |
+  | Avg cost | Cost price |
+  | Last cost | Last cost |
+  | Price tier | Price type |
+  | Tax class | VAT |
+  | Business date | Date |
+  | Supplier ref | Supplier invoice # |
+  | Transaction | Sale |
+  | Void | Cancel sale |
+  | Archive | Remove from list |
+  | Customer ledger | Account |
+  | Proforma invoice | Proforma |
+  | Diagnostics | System check |
+- Preserved terms (shop owner rejected changes; keep as-is):
+  | Term |
+  |---|
+  | Goods received |
+  | Opening balance |
+  | Quotation |
+  | Audit log |
+  | Dashboard |
+  | POS / Point of Sale |
+  | User / Role |
+  | GRN (abbreviation of Goods received) |
+- Consequences: Any new UI text added later must go through the dictionary. If a term is missing from this table, default to whatever the shop owner would say at the counter, not the schema field name.

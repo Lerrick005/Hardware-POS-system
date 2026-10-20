@@ -186,4 +186,28 @@ public sealed class ProductRepository : IProductRepository
             new { barcode }, cancellationToken: ct));
         return count > 0;
     }
+
+    public async Task<long?> GetPriceAsync(int productId, int tierId, CancellationToken ct = default)
+    {
+        using var connection = _factory.CreateOpen();
+        return await connection.ExecuteScalarAsync<long?>(new CommandDefinition(
+            "SELECT price_cents FROM product_prices WHERE product_id = $productId AND tier_id = $tierId",
+            new { productId, tierId }, cancellationToken: ct));
+    }
+
+    public async Task UpsertPriceAsync(int productId, int tierId, long priceCents, CancellationToken ct = default)
+    {
+        if (priceCents < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(priceCents), "Price cannot be negative.");
+        }
+
+        using var connection = _factory.CreateOpen();
+        await connection.ExecuteAsync(new CommandDefinition(@"
+            INSERT INTO product_prices(product_id, tier_id, price_cents)
+            VALUES ($productId, $tierId, $priceCents)
+            ON CONFLICT(product_id, tier_id)
+            DO UPDATE SET price_cents = excluded.price_cents",
+            new { productId, tierId, priceCents }, cancellationToken: ct));
+    }
 }
