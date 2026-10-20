@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
+using Pos.Application.Backup;
 using Pos.Application.Catalog;
 using Pos.Application.Customers;
 using Pos.Application.Reports;
@@ -11,6 +12,7 @@ using Pos.Application.Suppliers;
 using Pos.Application.Users;
 using Pos.Desktop.ViewModels;
 using Pos.Desktop.Views;
+using Pos.Infrastructure.Backup;
 using Pos.Infrastructure.Catalog;
 using Pos.Infrastructure.Customers;
 using Pos.Infrastructure.Data;
@@ -31,6 +33,12 @@ public partial class App : System.Windows.Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Critical: prevent WPF from auto-shutting-down when the login
+        // dialog closes (before MainWindow exists). With the default
+        // OnLastWindowClose mode, closing the login dialog kills the app
+        // before we ever show the main window.
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
         base.OnStartup(e);
 
         string dataFolder = Path.Combine(
@@ -48,7 +56,7 @@ public partial class App : System.Windows.Application
         services.AddLogging(b => b.AddSerilog(Log.Logger, dispose: false));
 
         services.AddSingleton(new DbConnectionFactory(dbPath));
-        services.AddSingleton<BackupService>();
+        services.AddSingleton<IBackupService, BackupService>();
         services.AddSingleton<MigrationRunner>();
 
         services.AddSingleton<IPinHasher, PinHasher>();
@@ -137,6 +145,9 @@ public partial class App : System.Windows.Application
         MainWindow window = _services.GetRequiredService<MainWindow>();
         MainWindow = window;
         window.Show();
+
+        // Now that the real main window exists, closing it should exit the app.
+        ShutdownMode = ShutdownMode.OnMainWindowClose;
     }
 
     private void WireDialogFactories()
@@ -240,9 +251,27 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        _services?.Dispose();
+        if (_services is not null)
+        {
+            try
+            {
+                IBackupService backups = _services.GetRequiredService<IBackupService>();
+                BackupInfo created = backups.CreateBackupAsync("auto-close").GetAwaiter().GetResult();
+                Log.Information("Auto-backup on close: {FileName}", created.FileName);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Auto-backup on close failed (non-fatal).");
+            }
+
+            _services.Dispose();
+        }
+
         Log.Information("MyPOS exiting.");
         Log.CloseAndFlush();
         base.OnExit(e);
     }
 }
+
+
+

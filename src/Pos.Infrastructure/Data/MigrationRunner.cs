@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Microsoft.Data.Sqlite;
+using Pos.Application.Backup;
 
 namespace Pos.Infrastructure.Data;
 
@@ -21,22 +22,19 @@ public sealed record MigrationResult(
 
 public sealed record Migration(Version Version, string ResourceName);
 
-/// <summary>
-/// Forward-only migration runner. Applies embedded SQL scripts in version order.
-/// Takes an online backup before applying any migration to a non-empty database.
-/// </summary>
 public sealed class MigrationRunner
 {
     private static readonly Version ZeroVersion = new(0, 0);
     private static readonly Migration[] Migrations =
     {
         new(new Version(1, 1), "Pos.Infrastructure.Migrations.001_baseline.sql"),
+        new(new Version(1, 2), "Pos.Infrastructure.Migrations.002_admin_promotion.sql"),
     };
 
     private readonly DbConnectionFactory _factory;
-    private readonly BackupService _backup;
+    private readonly IBackupService _backup;
 
-    public MigrationRunner(DbConnectionFactory factory, BackupService backup)
+    public MigrationRunner(DbConnectionFactory factory, IBackupService backup)
     {
         _factory = factory;
         _backup = backup;
@@ -46,17 +44,16 @@ public sealed class MigrationRunner
 
     public MigrationResult Run()
     {
+        Version fromVersion = ZeroVersion;
+
         try
         {
             using SqliteConnection connection = _factory.CreateOpen();
 
-            if (!TableExists(connection, "app_meta"))
-            {
-                ApplyScript(connection, Migrations[0].ResourceName);
-                return new MigrationResult(MigrationOutcome.FreshInstall, ZeroVersion, TargetVersion, null, null);
-            }
+            bool isFresh = !TableExists(connection, "app_meta");
+            Version current = isFresh ? ZeroVersion : ReadVersion(connection);
+            fromVersion = current;
 
-            Version current = ReadVersion(connection);
             if (current == TargetVersion)
             {
                 return new MigrationResult(MigrationOutcome.UpToDate, current, TargetVersion, null, null);
@@ -72,23 +69,34 @@ public sealed class MigrationRunner
                     "Database schema is newer than this application supports.");
             }
 
-            Migration[] pending = Migrations.Where(m => m.Version > current).OrderBy(m => m.Version).ToArray();
+            Migration[] pending = Migrations
+                .Where(m => m.Version > current)
+                .OrderBy(m => m.Version)
+                .ToArray();
+
             if (pending.Length == 0)
             {
                 return new MigrationResult(MigrationOutcome.UpToDate, current, TargetVersion, null, null);
             }
 
-            string backupPath = _backup.CreateBackup("pre-migrate");
+            // Backup only for existing DBs, not fresh installs (nothing to lose).
+            string? backupPath = null;
+            if (!isFresh)
+            {
+                backupPath = _backup.CreateBackupAsync("pre-migrate").GetAwaiter().GetResult().Path;
+            }
+
             foreach (Migration migration in pending)
             {
                 ApplyScript(connection, migration.ResourceName);
             }
 
-            return new MigrationResult(MigrationOutcome.Upgraded, current, TargetVersion, backupPath, null);
+            MigrationOutcome outcome = isFresh ? MigrationOutcome.FreshInstall : MigrationOutcome.Upgraded;
+            return new MigrationResult(outcome, current, TargetVersion, backupPath, null);
         }
         catch (Exception ex)
         {
-            return new MigrationResult(MigrationOutcome.Failed, ZeroVersion, TargetVersion, null, ex.Message);
+            return new MigrationResult(MigrationOutcome.Failed, fromVersion, TargetVersion, null, ex.Message);
         }
     }
 

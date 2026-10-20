@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\Pos.Application\Pos.Application.csproj" />
@@ -21,5 +21,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="..\..\pos_schema.sql" LogicalName="Pos.Infrastructure.Migrations.001_baseline.sql" />
+    <EmbeddedResource Include="Data\Migrations\002_admin_promotion.sql" LogicalName="Pos.Infrastructure.Migrations.002_admin_promotion.sql" />
   </ItemGroup>
 </Project>
+

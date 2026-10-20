@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
+using Pos.Infrastructure.Backup;
 using Pos.Infrastructure.Data;
 
 namespace Pos.Infrastructure.Tests;
@@ -37,3 +38,4 @@ public sealed class TestDatabase : IDisposable
         }
     }
 }
+

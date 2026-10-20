@@ -8,9 +8,10 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Header with Save Button in top right -->
+            <!-- Header -->
             <Grid Grid.Row="0" Margin="0,0,0,24">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -18,7 +19,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="Settings" Style="{StaticResource Text.Display}" />
-                    <TextBlock Text="Shop details that appear on every receipt and report."
+                    <TextBlock Text="Shop details that appear on every receipt, and data safety."
                                Style="{StaticResource Text.Body}"
                                Foreground="{StaticResource Brush.Text.Secondary}"
                                Margin="0,4,0,0" />
@@ -33,7 +34,7 @@
                         VerticalAlignment="Top" />
             </Grid>
 
-            <!-- Success / Error Banners -->
+            <!-- Status banners -->
             <StackPanel Grid.Row="1" Margin="0,0,0,16">
                 <Border Background="{StaticResource Brush.Success.Subtle}"
                         BorderBrush="{StaticResource Brush.Success}"
@@ -43,7 +44,7 @@
                         Margin="0,0,0,8"
                         Visibility="{Binding StatusText, Converter={StaticResource EmptyStringToCollapsedConverter}}">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{StaticResource Icon.Check}" FontFamily="{StaticResource Font.Icon}" 
+                        <TextBlock Text="{StaticResource Icon.Check}" FontFamily="{StaticResource Font.Icon}"
                                    Foreground="{StaticResource Brush.Success}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBlock Text="{Binding StatusText}"
                                    Foreground="{StaticResource Brush.Success}"
@@ -141,6 +142,113 @@
                                Style="{StaticResource Text.Caption}" />
                 </StackPanel>
             </Border>
+
+            <!-- Backup card -->
+            <Border Grid.Row="4" Style="{StaticResource Card}">
+                <StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Backup" Style="{StaticResource Text.Subtitle}" />
+                            <TextBlock Text="{Binding LastBackupText}"
+                                       Style="{StaticResource Text.Caption}"
+                                       Margin="0,2,0,0" />
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Content="Backup now"
+                                Command="{Binding BackupNowCommand}"
+                                Style="{StaticResource Button.Primary}"
+                                Padding="16,8"
+                                IsEnabled="{Binding IsBackingUp, Converter={StaticResource InvertBoolConverter}}"
+                                VerticalAlignment="Center" />
+                    </Grid>
+
+                    <TextBlock Text="Protect your shop data. Backups are saved to C:\ProgramData\MyPOS\backups. Copy this folder to a USB drive regularly in case of theft or fire."
+                               Style="{StaticResource Text.Caption}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,16" />
+
+                    <Border Background="{StaticResource Brush.Warning.Subtle}"
+                            BorderBrush="{StaticResource Brush.Warning}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource Radius.Medium}"
+                            Padding="10"
+                            Margin="0,0,0,12"
+                            Visibility="{Binding BackupStatusText, Converter={StaticResource EmptyStringToCollapsedConverter}}">
+                        <TextBlock Text="{Binding BackupStatusText}"
+                                   Foreground="{StaticResource Brush.Warning}"
+                                   FontSize="{StaticResource Font.Size.Body}"
+                                   TextWrapping="Wrap" />
+                    </Border>
+
+                    <!-- Backup list -->
+                    <TextBlock Text="Recent backups"
+                               Style="{StaticResource Text.Label}"
+                               Margin="0,0,0,6" />
+
+                    <ItemsControl ItemsSource="{Binding Backups}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{StaticResource Brush.Border.Default}"
+                                        BorderThickness="1"
+                                        CornerRadius="{StaticResource Radius.Medium}"
+                                        Padding="12,8"
+                                        Margin="0,0,0,6">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding CreatedAtUtc, StringFormat='{}{0:dd MMM yyyy, HH:mm} UTC'}"
+                                                   Style="{StaticResource Text.Body}"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Tag}"
+                                                   Style="{StaticResource Text.Caption}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="8,0,16,0"
+                                                   Foreground="{StaticResource Brush.Text.Secondary}" />
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding SizeBytes}"
+                                                   Style="{StaticResource Text.Caption}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,12,0"
+                                                   Foreground="{StaticResource Brush.Text.Secondary}" />
+                                        <Button Grid.Column="3"
+                                                Content="Restore"
+                                                Command="{Binding DataContext.RestoreBackupCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource Button.Ghost}"
+                                                Height="28" Padding="10,0"
+                                                Foreground="{StaticResource Brush.Danger}" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Text="No backups yet."
+                               Margin="0,8,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Backups.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
         </Grid>
     </ScrollViewer>
 </UserControl>
+
