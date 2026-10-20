@@ -137,11 +137,22 @@
                         <DataGridTemplateColumn Header="Product" Width="*">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding ProductName}" Style="{StaticResource Text.Body}" FontWeight="SemiBold" />
-                                        <TextBlock Text="{Binding UnitName, StringFormat='per {0}'}"
-                                                   Style="{StaticResource Text.Caption}" />
-                                    </StackPanel>
+                                    <TextBlock Text="{Binding ProductName}"
+                                               Style="{StaticResource Text.Body}"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Unit" Width="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <ComboBox ItemsSource="{Binding UnitOptions}"
+                                              SelectedItem="{Binding SelectedUnit}"
+                                              DisplayMemberPath="UnitName"
+                                              Padding="4,2"
+                                              FontSize="{StaticResource Font.Size.Caption}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -151,28 +162,30 @@
                                             CellStyle="{StaticResource DataGrid.NumericCell}"
                                             HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
                         <DataGridTextColumn Header="Price"
-                                            Binding="{Binding UnitPriceText}"
+                                            Binding="{Binding UnitPriceDisplay}"
                                             Width="90"
+                                            IsReadOnly="True"
                                             CellStyle="{StaticResource DataGrid.NumericCell}"
                                             HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
                         <DataGridTextColumn Header="Discount"
                                             Binding="{Binding DiscountText, UpdateSourceTrigger=PropertyChanged}"
-                                            Width="90"
+                                            Width="80"
                                             CellStyle="{StaticResource DataGrid.NumericCell}"
                                             HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
                         <DataGridTextColumn Header="Total"
                                             Binding="{Binding LineTotalDisplay}"
                                             Width="100"
+                                            IsReadOnly="True"
                                             CellStyle="{StaticResource DataGrid.NumericCell}"
                                             HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
-                        <DataGridTemplateColumn Header="" Width="70">
+                        <DataGridTemplateColumn Header="" Width="50">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Button Content="X"
                                             Command="{Binding DataContext.RemoveLineCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                             CommandParameter="{Binding}"
                                             Style="{StaticResource Button.Ghost}"
-                                            Height="28" Padding="10,0"
+                                            Height="26" Padding="8,0"
                                             Foreground="{StaticResource Brush.Danger}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
@@ -364,3 +377,4 @@
         </Grid>
     </Grid>
 </UserControl>
+

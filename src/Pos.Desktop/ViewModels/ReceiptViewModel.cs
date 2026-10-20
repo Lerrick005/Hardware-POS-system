@@ -5,12 +5,23 @@ using Pos.Application.Settings;
 
 namespace Pos.Desktop.ViewModels;
 
+/// <summary>
+/// One rendered line on the receipt. Includes the unit and a detail line
+/// like "@ KES 400.00/KG" so the customer can verify the math.
+/// </summary>
 public sealed class SaleReceiptLine
 {
     public string ProductName { get; init; } = "";
     public string QtyDisplay { get; init; } = "";
-    public string PriceDisplay { get; init; } = "";
+    public string UnitSymbol { get; init; } = "";
     public string TotalDisplay { get; init; } = "";
+
+    /// <summary>
+    /// Second line under the item, e.g. "(@ KES 400.00/KG)".
+    /// Empty when the unit is the base unit AND the qty is a whole number,
+    /// because the math is already obvious.
+    /// </summary>
+    public string UnitDetailLine { get; init; } = "";
 }
 
 public partial class ReceiptViewModel : ObservableObject
@@ -38,18 +49,42 @@ public partial class ReceiptViewModel : ObservableObject
         HasChange = sale.ChangeCents > 0;
         CompletedAt = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
 
-        foreach (var l in sale.Lines)
+        foreach (SaleResultLine l in sale.Lines)
         {
+            string qtyDisplay = (l.QtyMilli / 1000m).ToString("0.###");
+            string unitSymbol = string.IsNullOrEmpty(l.UnitSymbol) ? "pc" : l.UnitSymbol;
+            string priceDisplay = (l.UnitPriceCents / 100m).ToString("0.00");
+
+            // Detail line: "@ KES 400.00/KG". Only shown when the cashier
+            // used a non-base unit or a fractional qty — when the math is
+            // trivial (3 pieces @ 5 = 15) we skip it for cleaner paper.
+            bool isBaseUnit = l.FactorMilli == 1000;
+            bool isWholeQty = l.QtyMilli % 1000 == 0;
+
+            string detail = "";
+            if (!isBaseUnit)
+            {
+                // Non-base unit: always show the per-unit price so the
+                // customer can verify the conversion (e.g. 0.75 KG @ 400 = 300).
+                detail = $"(@ KES {priceDisplay}/{unitSymbol})";
+            }
+            else if (!isWholeQty)
+            {
+                // Base unit but fractional qty (rare but possible for Metre/Litre).
+                detail = $"(@ KES {priceDisplay}/{unitSymbol})";
+            }
+
             Lines.Add(new SaleReceiptLine
             {
                 ProductName = l.ProductName,
-                QtyDisplay = (l.QtyMilli / 1000m).ToString("0.###"),
-                PriceDisplay = (l.UnitPriceCents / 100m).ToString("0.00"),
-                TotalDisplay = (l.LineTotalCents / 100m).ToString("0.00")
+                QtyDisplay = qtyDisplay,
+                UnitSymbol = unitSymbol,
+                TotalDisplay = (l.LineTotalCents / 100m).ToString("0.00"),
+                UnitDetailLine = detail,
             });
         }
 
-        foreach (var p in sale.Payments)
+        foreach (SaleResultPayment p in sale.Payments)
         {
             Payments.Add($"{p.Method}: {(p.AmountCents / 100m):0.00}");
         }
