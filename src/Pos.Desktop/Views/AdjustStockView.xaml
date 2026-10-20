@@ -1,0 +1,165 @@
+﻿<Window x:Class="Pos.Desktop.Views.AdjustStockView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Adjust stock" Height="600" Width="520"
+        MinHeight="540" MinWidth="460"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="{StaticResource Brush.Canvas}"
+        FontFamily="Segoe UI">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="Adjust stock" Style="{StaticResource Text.Title}" />
+            <TextBlock Text="Record damage, loss, found stock, or correct a wrong count."
+                       Style="{StaticResource Text.Caption}" Margin="0,2,0,0" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Product + current stock -->
+                <Border Background="{StaticResource Brush.Surface.Sunken}"
+                        CornerRadius="{StaticResource Radius.Medium}"
+                        Padding="12"
+                        Margin="0,0,0,16">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="{Binding ProductName}" Style="{StaticResource Text.Subtitle}" />
+                            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,2,0,0">
+                                <Run Text="Current stock: " />
+                                <Run Text="{Binding CurrentStockDisplay, Mode=OneWay}" FontWeight="SemiBold" />
+                            </TextBlock>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Reason radio buttons -->
+                <TextBlock Text="What happened?" Style="{StaticResource Text.Label}" Margin="0,0,0,8" />
+
+                <RadioButton Content="Damaged / broken"
+                             GroupName="Reason"
+                             IsChecked="{Binding ReasonCategory, Converter={StaticResource EqualsConverter}, ConverterParameter=DAMAGED, Mode=OneWay}"
+                             Command="{Binding SetReasonDamagedCommand}"
+                             Margin="0,0,0,8" FontSize="{StaticResource Font.Size.Body}" />
+                <RadioButton Content="Lost / missing (can't find it)"
+                             GroupName="Reason"
+                             IsChecked="{Binding ReasonCategory, Converter={StaticResource EqualsConverter}, ConverterParameter=LOST, Mode=OneWay}"
+                             Command="{Binding SetReasonLostCommand}"
+                             Margin="0,0,0,8" FontSize="{StaticResource Font.Size.Body}" />
+                <RadioButton Content="Found (wasn't recorded)"
+                             GroupName="Reason"
+                             IsChecked="{Binding ReasonCategory, Converter={StaticResource EqualsConverter}, ConverterParameter=FOUND, Mode=OneWay}"
+                             Command="{Binding SetReasonFoundCommand}"
+                             Margin="0,0,0,8" FontSize="{StaticResource Font.Size.Body}" />
+                <RadioButton Content="Counted (system is wrong)"
+                             GroupName="Reason"
+                             IsChecked="{Binding ReasonCategory, Converter={StaticResource EqualsConverter}, ConverterParameter=COUNTED, Mode=OneWay}"
+                             Command="{Binding SetReasonCountedCommand}"
+                             Margin="0,0,0,16" FontSize="{StaticResource Font.Size.Body}" />
+
+                <!-- Quantity input -->
+                <TextBlock Text="{Binding QuantityLabel}" Style="{StaticResource Text.Label}" />
+                <TextBox Text="{Binding QuantityText, UpdateSourceTrigger=PropertyChanged}"
+                         Padding="10,8" Margin="0,4,0,4"
+                         FontSize="{StaticResource Font.Size.BodyLarge}"
+                         Background="{StaticResource Brush.Surface}"
+                         BorderBrush="{StaticResource Brush.Border.Default}"
+                         BorderThickness="1" />
+                <TextBlock Text="{Binding QuantityHelp}"
+                           Style="{StaticResource Text.Caption}"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,16" />
+
+                <!-- Preview -->
+                <Border Background="{StaticResource Brush.Surface.Sunken}"
+                        CornerRadius="{StaticResource Radius.Medium}"
+                        Padding="12"
+                        Margin="0,0,0,16">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Before" Style="{StaticResource Text.Caption}" />
+                            <TextBlock Text="{Binding CurrentStockDisplay}" Style="{StaticResource Text.Numeric}" />
+                        </StackPanel>
+
+                        <TextBlock Grid.Column="1" Text="→" FontSize="20"
+                                   Foreground="{StaticResource Brush.Text.Secondary}"
+                                   VerticalAlignment="Center" Margin="8,0" />
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="After" Style="{StaticResource Text.Caption}" />
+                            <TextBlock Text="{Binding NewStockDisplay}" Style="{StaticResource Text.Numeric}" FontWeight="Bold" />
+                        </StackPanel>
+
+                        <TextBlock Grid.Column="3" Text="Δ" FontSize="16"
+                                   Foreground="{StaticResource Brush.Text.Secondary}"
+                                   VerticalAlignment="Center" Margin="16,0,4,0" />
+
+                        <TextBlock Grid.Column="4" Text="{Binding DeltaDisplay}"
+                                   Style="{StaticResource Text.Numeric}"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+                </Border>
+
+                <!-- Notes -->
+                <TextBlock Text="Why? (required)" Style="{StaticResource Text.Label}" />
+                <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                         Padding="10,8" Margin="0,4,0,4"
+                         Height="70"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto"
+                         Background="{StaticResource Brush.Surface}"
+                         BorderBrush="{StaticResource Brush.Border.Default}"
+                         BorderThickness="1"
+                         FontSize="{StaticResource Font.Size.Body}" />
+                <TextBlock Text="A short reason helps you remember later. Shown in the audit log."
+                           Style="{StaticResource Text.Caption}"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,12" />
+
+                <!-- Error -->
+                <Border Background="{StaticResource Brush.Danger.Subtle}"
+                        BorderBrush="{StaticResource Brush.Danger}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Radius.Medium}"
+                        Padding="10"
+                        Visibility="{Binding ErrorMessage, Converter={StaticResource EmptyStringToCollapsedConverter}}">
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               Foreground="{StaticResource Brush.Danger}"
+                               TextWrapping="Wrap"
+                               FontSize="{StaticResource Font.Size.Body}" />
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Cancel" Click="OnCancel"
+                    Style="{StaticResource Button.Secondary}"
+                    Padding="16,8" Margin="0,0,8,0" />
+            <Button Content="Save adjustment"
+                    Command="{Binding SaveCommand}"
+                    IsDefault="True"
+                    Style="{StaticResource Button.Primary}"
+                    IsEnabled="{Binding IsSaving, Converter={StaticResource InvertBoolConverter}}" />
+        </StackPanel>
+    </Grid>
+</Window>
+
