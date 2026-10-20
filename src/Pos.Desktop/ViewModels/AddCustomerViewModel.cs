@@ -17,6 +17,9 @@ public partial class AddCustomerViewModel : ObservableObject
     private readonly ILogger<AddCustomerViewModel> _logger;
 
     [ObservableProperty]
+    private int? customerId;
+
+    [ObservableProperty]
     private string name = "";
 
     [ObservableProperty]
@@ -42,6 +45,16 @@ public partial class AddCustomerViewModel : ObservableObject
 
     public ObservableCollection<PriceTier> PriceTiers { get; } = new();
 
+    public bool IsEditMode => CustomerId is not null;
+    public string WindowTitle => IsEditMode ? "Edit customer" : "Add customer";
+    public string SaveButtonText => IsEditMode ? "Save changes" : "Save customer";
+
+    public string OpeningBalanceLabel => IsEditMode ? "Current balance (KES)" : "Opening balance (KES)";
+
+    public string OpeningBalanceHelp => IsEditMode
+        ? "Shown for reference. Opening balance cannot be changed after the customer is created."
+        : "Enter the amount this customer already owes you. Leave 0 for a new customer.";
+
     public event EventHandler<int>? Saved;
 
     public AddCustomerViewModel(
@@ -62,7 +75,34 @@ public partial class AddCustomerViewModel : ObservableObject
             PriceTiers.Add(t);
         }
 
-        SelectedPriceTier = PriceTiers.FirstOrDefault(t => t.IsDefault) ?? PriceTiers.FirstOrDefault();
+        if (CustomerId is null)
+        {
+            SelectedPriceTier = PriceTiers.FirstOrDefault(t => t.IsDefault) ?? PriceTiers.FirstOrDefault();
+            return;
+        }
+
+        Customer? existing = await _customers.GetByIdAsync(CustomerId.Value);
+        if (existing is null)
+        {
+            ErrorMessage = "This customer no longer exists.";
+            return;
+        }
+
+        Name = existing.Name;
+        Phone = existing.Phone ?? "";
+        CreditLimitText = ShillingsFromCents(existing.CreditLimitCents);
+        Notes = existing.Notes ?? "";
+        SelectedPriceTier = PriceTiers.FirstOrDefault(t => t.Id == existing.PriceTierId)
+                            ?? PriceTiers.FirstOrDefault();
+
+        long balance = await _customers.GetBalanceCentsAsync(existing.Id);
+        OpeningBalanceText = ShillingsFromCents(balance);
+
+        OnPropertyChanged(nameof(IsEditMode));
+        OnPropertyChanged(nameof(WindowTitle));
+        OnPropertyChanged(nameof(SaveButtonText));
+        OnPropertyChanged(nameof(OpeningBalanceLabel));
+        OnPropertyChanged(nameof(OpeningBalanceHelp));
     }
 
     [RelayCommand]
@@ -82,7 +122,7 @@ public partial class AddCustomerViewModel : ObservableObject
             return;
         }
 
-        if (!TryParseShillings(OpeningBalanceText, out long openingBalanceCents, out string? balanceErr))
+        if (!IsEditMode && !TryParseShillings(OpeningBalanceText, out _, out string? balanceErr))
         {
             ErrorMessage = balanceErr ?? "Opening balance is not valid.";
             return;
@@ -92,29 +132,47 @@ public partial class AddCustomerViewModel : ObservableObject
         {
             IsSaving = true;
 
-            Customer customer = new()
+            if (IsEditMode)
             {
-                Uuid = Guid.NewGuid().ToString("N"),
-                Name = Name.Trim(),
-                Phone = string.IsNullOrWhiteSpace(Phone) ? null : Phone.Trim(),
-                PriceTierId = SelectedPriceTier?.Id,
-                CreditLimitCents = creditLimitCents,
-                Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
-                IsActive = true,
-            };
+                Customer? existing = await _customers.GetByIdAsync(CustomerId!.Value);
+                if (existing is null)
+                {
+                    ErrorMessage = "This customer no longer exists.";
+                    return;
+                }
 
-            string today = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                existing.Name = Name.Trim();
+                existing.Phone = string.IsNullOrWhiteSpace(Phone) ? null : Phone.Trim();
+                existing.PriceTierId = SelectedPriceTier?.Id;
+                existing.CreditLimitCents = creditLimitCents;
+                existing.Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim();
 
-            int id = await _customers.InsertWithOpeningBalanceAsync(
-                customer,
-                openingBalanceCents,
-                today);
+                await _customers.UpdateAsync(existing);
+                Saved?.Invoke(this, existing.Id);
+            }
+            else
+            {
+                TryParseShillings(OpeningBalanceText, out long openingBalanceCents, out _);
 
-            Saved?.Invoke(this, id);
+                Customer customer = new()
+                {
+                    Uuid = Guid.NewGuid().ToString("N"),
+                    Name = Name.Trim(),
+                    Phone = string.IsNullOrWhiteSpace(Phone) ? null : Phone.Trim(),
+                    PriceTierId = SelectedPriceTier?.Id,
+                    CreditLimitCents = creditLimitCents,
+                    Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
+                    IsActive = true,
+                };
+
+                string today = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                int id = await _customers.InsertWithOpeningBalanceAsync(customer, openingBalanceCents, today);
+                Saved?.Invoke(this, id);
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "AddCustomer failed for {Name}", Name);
+            _logger.LogError(ex, "Save customer failed for {Name}", Name);
             ErrorMessage = $"Could not save: {ex.Message}";
         }
         finally
@@ -123,10 +181,9 @@ public partial class AddCustomerViewModel : ObservableObject
         }
     }
 
-    /// <summary>
-    /// Parses a shillings amount the user types into integer cents.
-    /// Accepts "0", "650", "650.00", "2,500.00". Rejects negatives and non-numbers.
-    /// </summary>
+    private static string ShillingsFromCents(long cents) =>
+        (cents / 100m).ToString("0.##", CultureInfo.InvariantCulture);
+
     private static bool TryParseShillings(string raw, out long cents, out string? error)
     {
         cents = 0;
@@ -135,7 +192,7 @@ public partial class AddCustomerViewModel : ObservableObject
         string trimmed = raw?.Trim() ?? "";
         if (trimmed.Length == 0)
         {
-            return true;   // treat empty as zero
+            return true;
         }
 
         if (!decimal.TryParse(trimmed, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal shillings))

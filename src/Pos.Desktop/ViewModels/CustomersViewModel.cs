@@ -27,8 +27,7 @@ public partial class CustomersViewModel : ObservableObject
 
     public ObservableCollection<CustomerListItem> Customers { get; } = new();
 
-    /// <summary>Set by App composition so this VM does not depend on the DI container.</summary>
-    public Func<AddCustomerView>? CreateAddCustomerDialog { get; set; }
+    public Func<int?, AddCustomerView>? CreateCustomerDialog { get; set; }
 
     public CustomersViewModel(ICustomerRepository repo, ILogger<CustomersViewModel> logger)
     {
@@ -66,7 +65,7 @@ public partial class CustomersViewModel : ObservableObject
         }
         catch (OperationCanceledException)
         {
-            // superseded by a newer keystroke or toggle
+            // superseded
         }
     }
 
@@ -128,16 +127,72 @@ public partial class CustomersViewModel : ObservableObject
     [RelayCommand]
     private async Task AddCustomerAsync()
     {
-        if (CreateAddCustomerDialog is null)
+        if (CreateCustomerDialog is null)
         {
             return;
         }
 
-        AddCustomerView dialog = CreateAddCustomerDialog();
-        bool? ok = dialog.ShowDialog();
-        if (ok == true)
+        AddCustomerView dialog = CreateCustomerDialog(null);
+        if (dialog.ShowDialog() == true)
         {
             await RefreshAsync();
+        }
+    }
+
+    [RelayCommand]
+    private async Task EditCustomerAsync(CustomerListItem? item)
+    {
+        if (item is null || CreateCustomerDialog is null)
+        {
+            return;
+        }
+
+        AddCustomerView dialog = CreateCustomerDialog(item.Id);
+        if (dialog.ShowDialog() == true)
+        {
+            await RefreshAsync();
+        }
+    }
+
+    [RelayCommand]
+    private async Task ArchiveCustomerAsync(CustomerListItem? item)
+    {
+        if (item is null)
+        {
+            return;
+        }
+
+        // Refuse to remove a customer who still owes money.
+        if (item.BalanceCents > 0)
+        {
+            ConfirmDialog.Create(
+                "Cannot remove this customer",
+                $"{item.Name} still owes {new Pos.Domain.Money(item.BalanceCents)}. " +
+                "Record a payment or write off the balance before removing them.",
+                confirmLabel: "Understood")
+                .ShowDialog();
+            return;
+        }
+
+        ConfirmDialog dlg = ConfirmDialog.CreateDanger(
+            "Remove this customer?",
+            $"{item.Name} will no longer appear in the list. Their account history is kept and can be restored later.",
+            confirmLabel: "Remove customer");
+
+        if (dlg.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            await _repo.ArchiveAsync(item.Id);
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Archive customer {Id} failed", item.Id);
+            StatusText = $"Could not remove customer: {ex.Message}";
         }
     }
 

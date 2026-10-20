@@ -77,9 +77,11 @@ public partial class App : System.Windows.Application
         };
 
         CustomersViewModel customersVm = _services.GetRequiredService<CustomersViewModel>();
-        customersVm.CreateAddCustomerDialog = () =>
+        customersVm.CreateCustomerDialog = (int? customerId) =>
         {
             AddCustomerView dialog = _services.GetRequiredService<AddCustomerView>();
+            AddCustomerViewModel vm = (AddCustomerViewModel)dialog.DataContext;
+            vm.CustomerId = customerId;
             dialog.Owner = MainWindow;
             return dialog;
         };

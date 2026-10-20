@@ -129,6 +129,26 @@
                                             Width="120"
                                             CellStyle="{StaticResource DataGrid.NumericCell}"
                                             HeaderStyle="{StaticResource DataGrid.NumericColumnHeader}" />
+                        <DataGridTemplateColumn Header="" Width="130">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button Content="Edit"
+                                                Command="{Binding DataContext.EditCustomerCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource Button.Ghost}"
+                                                Height="28" Padding="10,0"
+                                                Margin="0,0,4,0" />
+                                        <Button Content="Remove"
+                                                Command="{Binding DataContext.ArchiveCustomerCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource Button.Ghost}"
+                                                Height="28" Padding="10,0"
+                                                Foreground="{StaticResource Brush.Danger}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
