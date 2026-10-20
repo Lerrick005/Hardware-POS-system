@@ -1,0 +1,159 @@
+﻿<Window x:Class="Pos.Desktop.Views.CloseShiftView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Close shift" Height="560" Width="480"
+        MinHeight="500" MinWidth="440"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="{StaticResource Brush.Canvas}"
+        FontFamily="Segoe UI">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="Close shift" Style="{StaticResource Text.Title}" />
+            <TextBlock Text="Count the cash in the drawer. The system will compare it to expected."
+                       Style="{StaticResource Text.Caption}" Margin="0,2,0,0" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Border Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.Border.Default}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Radius.Medium}"
+                        Padding="16"
+                        Margin="0,0,0,16">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Opening float" Style="{StaticResource Text.Body}"
+                                       Foreground="{StaticResource Brush.Text.Secondary}" />
+                            <TextBlock Grid.Column="1" Text="{Binding OpeningFloatDisplay}" Style="{StaticResource Text.Numeric}" />
+                        </Grid>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Cash sales" Style="{StaticResource Text.Body}"
+                                       Foreground="{StaticResource Brush.Text.Secondary}" />
+                            <TextBlock Grid.Column="1" Text="{Binding CashSalesDisplay}" Style="{StaticResource Text.Numeric}" />
+                        </Grid>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Cash in" Style="{StaticResource Text.Body}"
+                                       Foreground="{StaticResource Brush.Text.Secondary}" />
+                            <TextBlock Grid.Column="1" Text="{Binding CashInDisplay}" Style="{StaticResource Text.Numeric}" />
+                        </Grid>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Cash out" Style="{StaticResource Text.Body}"
+                                       Foreground="{StaticResource Brush.Text.Secondary}" />
+                            <TextBlock Grid.Column="1" Text="{Binding CashOutDisplay}" Style="{StaticResource Text.Numeric}" />
+                        </Grid>
+                        <Border BorderBrush="{StaticResource Brush.Border.Default}"
+                                BorderThickness="0,1,0,0"
+                                Padding="0,12,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Expected in drawer" Style="{StaticResource Text.Subtitle}" />
+                                <TextBlock Grid.Column="1" Text="{Binding ExpectedCashDisplay}" Style="{StaticResource Text.NumericStrong}" FontSize="20" />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Text="Cash you counted (KES) *" Style="{StaticResource Text.Label}" />
+                <TextBox Text="{Binding CountedCashText, UpdateSourceTrigger=PropertyChanged}"
+                         Padding="12,10" Margin="0,4,0,12"
+                         FontSize="{StaticResource Font.Size.BodyLarge}"
+                         Background="{StaticResource Brush.Surface}"
+                         BorderBrush="{StaticResource Brush.Border.Default}"
+                         BorderThickness="1" />
+
+                <Border Background="{StaticResource Brush.Surface.Sunken}"
+                        BorderBrush="{StaticResource Brush.Border.Default}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Radius.Medium}"
+                        Padding="12"
+                        Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Variance" Style="{StaticResource Text.Body}" FontWeight="SemiBold" />
+                        <TextBlock Grid.Column="1" Text="{Binding VarianceDisplay}" FontSize="18" FontWeight="Bold">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource Brush.Success}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding VarianceIsNegative}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource Brush.Danger}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Border>
+
+                <TextBlock Text="Notes (optional)" Style="{StaticResource Text.Label}" />
+                <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                         Padding="10,8" Margin="0,4,0,0"
+                         Height="60"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto"
+                         Background="{StaticResource Brush.Surface}"
+                         BorderBrush="{StaticResource Brush.Border.Default}"
+                         BorderThickness="1"
+                         FontSize="{StaticResource Font.Size.Body}" />
+                <TextBlock Text="Explain any variance here — owner will see this note."
+                           Style="{StaticResource Text.Caption}"
+                           Margin="0,4,0,0" />
+
+                <Border Background="{StaticResource Brush.Danger.Subtle}"
+                        BorderBrush="{StaticResource Brush.Danger}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Radius.Medium}"
+                        Padding="10"
+                        Margin="0,12,0,0"
+                        Visibility="{Binding ErrorMessage, Converter={StaticResource EmptyStringToCollapsedConverter}}">
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               Foreground="{StaticResource Brush.Danger}"
+                               TextWrapping="Wrap"
+                               FontSize="{StaticResource Font.Size.Body}" />
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Cancel" Click="OnCancel"
+                    Style="{StaticResource Button.Secondary}"
+                    Padding="16,8" Margin="0,0,8,0" />
+            <Button Content="Close shift"
+                    Command="{Binding CloseCommand}"
+                    IsDefault="True"
+                    Style="{StaticResource Button.Primary}"
+                    IsEnabled="{Binding IsSaving, Converter={StaticResource InvertBoolConverter}}" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,0 +1,26 @@
+﻿using System.Windows;
+using Pos.Desktop.ViewModels;
+
+namespace Pos.Desktop.Views;
+
+public partial class OpenShiftView : Window
+{
+    public OpenShiftView(OpenShiftViewModel vm)
+    {
+        InitializeComponent();
+        DataContext = vm;
+        vm.Opened += (_, _) => { DialogResult = true; Close(); };
+        SourceInitialized += (_, _) => ClampToScreen();
+    }
+
+    private void OnCancel(object sender, RoutedEventArgs e) { DialogResult = false; Close(); }
+
+    private void ClampToScreen()
+    {
+        const double Buffer = 24;
+        double maxW = SystemParameters.WorkArea.Width - Buffer;
+        double maxH = SystemParameters.WorkArea.Height - Buffer;
+        if (Width > maxW) Width = maxW;
+        if (Height > maxH) Height = maxH;
+    }
+}

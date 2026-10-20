@@ -46,8 +46,50 @@
                     <TextBlock Text="{Binding CurrentTitle}" Style="{StaticResource Text.Body}" VerticalAlignment="Center"
                                Foreground="{StaticResource Brush.Text.Secondary}" />
                 </StackPanel>
-                <TextBlock Grid.Column="2" Text="{Binding UserLabel}" Style="{StaticResource Text.Caption}"
-                           VerticalAlignment="Center" />
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Shift widget -->
+                    <Border Background="{StaticResource Brush.Surface.Sunken}"
+                            BorderBrush="{StaticResource Brush.Border.Default}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource Radius.Medium}"
+                            Padding="10,4"
+                            Margin="0,0,12,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{StaticResource Icon.Cash}"
+                                       FontFamily="{StaticResource Font.Icon}"
+                                       FontSize="12"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,6,0"
+                                       Foreground="{StaticResource Brush.Text.Secondary}" />
+                            <TextBlock Text="{Binding ShiftLabel}"
+                                       Style="{StaticResource Text.Caption}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,8,0" />
+                            <TextBlock Text="{Binding ShiftExpectedDisplay, StringFormat='{}{0} KES'}"
+                                       Style="{StaticResource Text.Caption}"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <Button Command="{Binding OpenShiftCommand}"
+                            Style="{StaticResource Button.Ghost}"
+                            Padding="10,4"
+                            Margin="0,0,4,0"
+                            Visibility="{Binding HasOpenShift, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}">
+                        <TextBlock Text="Open shift" VerticalAlignment="Center" />
+                    </Button>
+                    <Button Command="{Binding CloseShiftCommand}"
+                            Style="{StaticResource Button.Ghost}"
+                            Padding="10,4"
+                            Margin="0,0,12,0"
+                            Visibility="{Binding HasOpenShift, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="Close shift" VerticalAlignment="Center" />
+                    </Button>
+
+                    <TextBlock Text="{Binding UserLabel}" Style="{StaticResource Text.Caption}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -91,5 +133,6 @@
         <ContentControl Grid.Row="1" Grid.Column="1" Content="{Binding CurrentView}" />
     </Grid>
 </Window>
+
 
 

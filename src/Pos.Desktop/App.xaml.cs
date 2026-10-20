@@ -2,6 +2,7 @@
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Pos.Application.Backup;
+using Pos.Application.Cash;
 using Pos.Application.Catalog;
 using Pos.Application.Expenses;
 using Pos.Application.Customers;
@@ -14,6 +15,7 @@ using Pos.Application.Users;
 using Pos.Desktop.ViewModels;
 using Pos.Desktop.Views;
 using Pos.Infrastructure.Backup;
+using Pos.Infrastructure.Cash;
 using Pos.Infrastructure.Catalog;
 using Pos.Infrastructure.Expenses;
 using Pos.Infrastructure.Customers;
@@ -76,6 +78,8 @@ public partial class App : System.Windows.Application
         services.AddSingleton<IDashboardQuery, DashboardQuery>();
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IExpensesService, ExpensesService>();
+        services.AddSingleton<ICashSessionService, CashSessionService>();
+        services.AddSingleton<ICashSessionQuery, CashSessionQuery>();
 
         services.AddSingleton<LoginViewModel>();
         services.AddSingleton<DashboardViewModel>();
@@ -93,6 +97,10 @@ public partial class App : System.Windows.Application
         services.AddSingleton<ExpensesViewModel>();
         services.AddTransient<AddExpenseViewModel>();
         services.AddTransient<AddExpenseView>();
+        services.AddTransient<OpenShiftViewModel>();
+        services.AddTransient<OpenShiftView>();
+        services.AddTransient<CloseShiftViewModel>();
+        services.AddTransient<CloseShiftView>();
 
         services.AddTransient<AddProductViewModel>();
         services.AddTransient<AddProductView>();
@@ -242,6 +250,20 @@ public partial class App : System.Windows.Application
             return dialog;
         };
 
+        MainWindowViewModel mainVm2 = _services.GetRequiredService<MainWindowViewModel>();
+        mainVm2.CreateOpenShiftDialog = () =>
+        {
+            OpenShiftView dialog = _services.GetRequiredService<OpenShiftView>();
+            dialog.Owner = MainWindow;
+            return dialog;
+        };
+        mainVm2.CreateCloseShiftDialog = () =>
+        {
+            CloseShiftView dialog = _services.GetRequiredService<CloseShiftView>();
+            dialog.Owner = MainWindow;
+            return dialog;
+        };
+
         ISettingsService settingsService = _services.GetRequiredService<ISettingsService>();
         SellViewModel sellVm = _services.GetRequiredService<SellViewModel>();
         sellVm.CreateReceiptDialog = (SaleResult sale) =>
@@ -298,4 +320,5 @@ public partial class App : System.Windows.Application
         base.OnExit(e);
     }
 }
+
 
