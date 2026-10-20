@@ -9,8 +9,8 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
-            <TextBlock Text="Goods received" Style="{StaticResource DisplayText}" />
-            <TextBlock Text="Deliveries recorded from suppliers. Stock updates automatically." Style="{StaticResource CaptionText}" Margin="0,4,0,16" />
+            <TextBlock Text="Deliveries" Style="{StaticResource DisplayText}" />
+            <TextBlock Text="Every delivery that came in. Each one updated your stock." Style="{StaticResource CaptionText}" Margin="0,4,0,16" />
         </StackPanel>
 
         <Grid Grid.Row="1" Margin="0,0,0,12">
@@ -24,7 +24,7 @@
                        Style="{StaticResource CaptionText}"
                        VerticalAlignment="Center" />
 
-            <Button Grid.Column="1" Content="+ New receipt" Command="{Binding NewReceiptCommand}"
+            <Button Grid.Column="1" Content="+ New delivery" Command="{Binding NewReceiptCommand}"
                     Style="{StaticResource PrimaryButton}" Padding="14,8" Margin="0,0,8,0" />
 
             <Button Grid.Column="2" Content="Refresh" Command="{Binding RefreshCommand}"
@@ -55,3 +55,4 @@
         </Border>
     </Grid>
 </UserControl>
+

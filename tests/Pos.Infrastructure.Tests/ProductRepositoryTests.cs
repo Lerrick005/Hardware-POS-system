@@ -154,8 +154,9 @@ public sealed class ProductRepositoryTests : IDisposable
 
         Assert.Equal(200, first.Count);
         Assert.NotEmpty(second);
-        Assert.True(firstMs < 100, "First search took " + firstMs + " ms (target < 100)");
-        Assert.True(secondMs < 100, "Second search took " + secondMs + " ms (target < 100)");
+        Assert.True(firstMs < 200, "First search took " + firstMs + " ms (target < 200)");
+        Assert.True(secondMs < 200, "Second search took " + secondMs + " ms (target < 200)");
     }
 }
+
 

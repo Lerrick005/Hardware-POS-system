@@ -113,7 +113,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand] private void ShowDashboard() { _ = _dashboard.LoadAsync(); CurrentView = _dashboard; CurrentTitle = "Dashboard"; SelectedNav = "Dashboard"; }
     [RelayCommand] private async Task ShowSellAsync() { await _sell.LoadAsync(); await RefreshShiftAsync(); CurrentView = _sell; CurrentTitle = "Sell"; SelectedNav = "Sell"; }
     [RelayCommand] private async Task ShowProductsAsync() { await _products.RefreshAsync(); CurrentView = _products; CurrentTitle = "Products"; SelectedNav = "Products"; }
-    [RelayCommand] private async Task ShowStockAsync() { await _receiveGoods.RefreshAsync(); CurrentView = _receiveGoods; CurrentTitle = "Stock"; SelectedNav = "Stock"; }
+    [RelayCommand] private async Task ShowStockAsync() { await _receiveGoods.RefreshAsync(); CurrentView = _receiveGoods; CurrentTitle = "Deliveries"; SelectedNav = "Deliveries"; }
     [RelayCommand] private async Task ShowCustomersAsync() { await _customers.RefreshAsync(); CurrentView = _customers; CurrentTitle = "Customers"; SelectedNav = "Customers"; }
     [RelayCommand] private async Task ShowSuppliersAsync() { await _suppliers.RefreshAsync(); CurrentView = _suppliers; CurrentTitle = "Suppliers"; SelectedNav = "Suppliers"; }
     [RelayCommand] private async Task ShowReportsAsync() { await _reports.LoadAsync(); CurrentView = _reports; CurrentTitle = "Reports"; SelectedNav = "Reports"; }
@@ -138,4 +138,5 @@ public partial class MainWindowViewModel : ObservableObject
         SelectedNav = "Settings";
     }
 }
+
 

@@ -107,8 +107,8 @@
                 <RadioButton Content="Products" Style="{StaticResource NavButton}" Margin="0,0,0,4"
                              IsChecked="{Binding SelectedNav, Converter={StaticResource EqualsConverter}, ConverterParameter=Products, Mode=OneWay}"
                              Command="{Binding ShowProductsCommand}" />
-                <RadioButton Content="Stock" Style="{StaticResource NavButton}" Margin="0,0,0,4"
-                             IsChecked="{Binding SelectedNav, Converter={StaticResource EqualsConverter}, ConverterParameter=Stock, Mode=OneWay}"
+                <RadioButton Content="Deliveries" Style="{StaticResource NavButton}" Margin="0,0,0,4"
+                             IsChecked="{Binding SelectedNav, Converter={StaticResource EqualsConverter}, ConverterParameter=Deliveries, Mode=OneWay}"
                              Command="{Binding ShowStockCommand}" />
                 <RadioButton Content="Suppliers" Style="{StaticResource NavButton}" Margin="0,0,0,4"
                              IsChecked="{Binding SelectedNav, Converter={StaticResource EqualsConverter}, ConverterParameter=Suppliers, Mode=OneWay}"
@@ -133,6 +133,7 @@
         <ContentControl Grid.Row="1" Grid.Column="1" Content="{Binding CurrentView}" />
     </Grid>
 </Window>
+
 
 
 
