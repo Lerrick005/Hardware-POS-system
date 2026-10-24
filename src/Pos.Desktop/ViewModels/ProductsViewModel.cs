@@ -30,6 +30,9 @@ public partial class ProductsViewModel : ObservableObject
     /// <summary>Set by App composition. Opens the categories management dialog.</summary>
     public Func<CategoriesView>? CreateCategoriesDialog { get; set; }
 
+    /// <summary>Set by App composition. Takes a product id, returns the dialog ready to show.</summary>
+    public Func<int, AdjustStockView>? CreateAdjustStockDialog { get; set; }
+
     public ProductsViewModel(IProductRepository repo, ILogger<ProductsViewModel> logger)
     {
         _repo = repo;
@@ -165,6 +168,18 @@ public partial class ProductsViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task AdjustStockAsync(ProductListItem? item)
+    {
+        if (item is null || CreateAdjustStockDialog is null) return;
+
+        AdjustStockView dialog = CreateAdjustStockDialog(item.Id);
+        if (dialog.ShowDialog() == true)
+        {
+            await RefreshAsync();
+        }
+    }
+
+    [RelayCommand]
     private void ManageCategories()
     {
         if (CreateCategoriesDialog is null)
@@ -182,3 +197,4 @@ public partial class ProductsViewModel : ObservableObject
         await RefreshAsync();
     }
 }
+

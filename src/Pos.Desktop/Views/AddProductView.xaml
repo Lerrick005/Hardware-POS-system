@@ -16,7 +16,7 @@
 
         <StackPanel Grid.Row="0" Margin="0,0,0,16">
             <TextBlock Text="{Binding WindowTitle}" Style="{StaticResource Text.Title}" />
-            <TextBlock Text="Product details, price, and any extra units it can be sold in."
+            <TextBlock Text="Product details, price, opening stock and any extra selling units."
                        Style="{StaticResource Text.Caption}" Margin="0,2,0,0" TextWrapping="Wrap" />
         </StackPanel>
 
@@ -92,7 +92,59 @@
                          BorderBrush="{StaticResource Brush.Border.Default}"
                          BorderThickness="1" />
 
-                <!-- ===== Price for the base unit ===== -->
+                <!-- ===== Opening stock (create mode only) ===== -->
+                <Border Background="{StaticResource Brush.Success.Subtle}"
+                        CornerRadius="{StaticResource Radius.Medium}"
+                        Padding="12"
+                        Margin="0,0,0,16"
+                        Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}">
+                    <StackPanel>
+                        <TextBlock Text="Opening stock"
+                                   Style="{StaticResource Text.Title}"
+                                   FontSize="17"
+                                   Margin="0,0,0,4" />
+                        <TextBlock Text="How much of this product do you have right now? Enter the starting quantity so you can start selling immediately."
+                                   Style="{StaticResource Text.Caption}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,10" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Quantity you have" Style="{StaticResource Text.Label}" />
+                                <TextBox Text="{Binding OpeningStockText, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="10,8" Margin="0,4,0,0"
+                                         FontSize="{StaticResource Font.Size.BodyLarge}"
+                                         Background="{StaticResource Brush.Surface}"
+                                         BorderBrush="{StaticResource Brush.Border.Default}"
+                                         BorderThickness="1" />
+                                <TextBlock Text="Leave blank or 0 if you don't have any yet."
+                                           Style="{StaticResource Text.Caption}"
+                                           FontSize="11" Margin="0,2,0,0" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Cost per unit (optional)" Style="{StaticResource Text.Label}" />
+                                <TextBox Text="{Binding OpeningCostText, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="10,8" Margin="0,4,0,0"
+                                         FontSize="{StaticResource Font.Size.BodyLarge}"
+                                         Background="{StaticResource Brush.Surface}"
+                                         BorderBrush="{StaticResource Brush.Border.Default}"
+                                         BorderThickness="1" />
+                                <TextBlock Text="What you paid. Used for profit reports."
+                                           Style="{StaticResource Text.Caption}"
+                                           FontSize="11" Margin="0,2,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== Selling price ===== -->
                 <Border Background="{StaticResource Brush.Surface.Sunken}"
                         CornerRadius="{StaticResource Radius.Medium}"
                         Padding="12"
@@ -131,7 +183,7 @@
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="Other units this product can be sold in"
                                            Style="{StaticResource Text.Subtitle}" />
-                                <TextBlock Text="Optional. E.g. 1 Box = 120 pieces, 1 kg = 25 pieces. Each unit has its own price."
+                                <TextBlock Text="Optional. E.g. 1 Box = 120 pieces, 1 Kilogram = 25 pieces. Each unit has its own price."
                                            Style="{StaticResource Text.Caption}"
                                            TextWrapping="Wrap"
                                            Margin="0,2,0,0" />
@@ -144,7 +196,6 @@
                                     VerticalAlignment="Center" />
                         </Grid>
 
-                        <!-- Column headers -->
                         <Grid Margin="0,4,0,4">
                             <Grid.Style>
                                 <Style TargetType="Grid">
@@ -168,14 +219,14 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="180" />
                                 <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="200" />
                                 <ColumnDefinition Width="8" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="8" />
                                 <ColumnDefinition Width="30" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="Unit" Style="{StaticResource Text.Caption}" FontWeight="SemiBold" />
-                            <TextBlock Grid.Column="2" Text="1 unit = n" Style="{StaticResource Text.Caption}" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="2" Text="1 unit = how many" Style="{StaticResource Text.Caption}" FontWeight="SemiBold" />
                             <TextBlock Grid.Column="4" Text="Price (KES)" Style="{StaticResource Text.Caption}" FontWeight="SemiBold" />
                         </Grid>
 
@@ -186,7 +237,7 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="180" />
                                             <ColumnDefinition Width="8" />
-                                            <ColumnDefinition Width="100" />
+                                            <ColumnDefinition Width="200" />
                                             <ColumnDefinition Width="8" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="8" />

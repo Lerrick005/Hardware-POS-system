@@ -657,6 +657,71 @@ public sealed class ProductRepository : IProductRepository
         }
     }
 
+    public async Task<int> SaveProductWithAllPricesAndOpeningStockAsync(
+        Product product,
+        string? barcode,
+        IReadOnlyDictionary<int, long> baseTierPrices,
+        IReadOnlyList<ProductUnitSave> alternativeUnits,
+        long openingStockMilli,
+        long openingCostCents,
+        string? businessDate,
+        int? userId,
+        CancellationToken ct = default)
+    {
+        // 1. Save the product, units and prices via the existing method.
+        int productId = await SaveProductWithAllPricesAsync(
+            product, barcode, baseTierPrices, alternativeUnits, ct);
+
+        // 2. If opening stock was requested, add the stock movement in its own
+        //    small transaction. The stock_milli trigger updates products.stock_milli.
+        if (openingStockMilli > 0)
+        {
+            if (openingStockMilli <= 0)
+                throw new ArgumentException("Opening stock must be positive.", nameof(openingStockMilli));
+            if (openingCostCents < 0)
+                throw new ArgumentException("Opening cost cannot be negative.", nameof(openingCostCents));
+            if (string.IsNullOrWhiteSpace(businessDate) || businessDate.Length != 10)
+                throw new ArgumentException("Business date required for opening stock.", nameof(businessDate));
+
+            using SqliteConnection connection = _factory.CreateOpen();
+            using SqliteTransaction tx = connection.BeginTransaction();
+            try
+            {
+                await connection.ExecuteAsync(new CommandDefinition(@"
+                    INSERT INTO stock_movements(product_id, movement_type, qty_milli, unit_cost_cents,
+                                                ref_type, reason, user_id, business_date)
+                    VALUES ($productId, 'OPENING', $qtyMilli, $unitCost,
+                            'OPENING', 'Opening stock', $userId, $businessDate)",
+                    new
+                    {
+                        productId,
+                        qtyMilli = openingStockMilli,
+                        unitCost = openingCostCents,
+                        userId,
+                        businessDate,
+                    },
+                    tx, cancellationToken: ct));
+
+                // Set avg_cost if opening cost was provided
+                if (openingCostCents > 0)
+                {
+                    await connection.ExecuteAsync(new CommandDefinition(@"
+                        UPDATE products
+                           SET avg_cost_cents = $cost, last_cost_cents = $cost
+                         WHERE id = $id",
+                        new { id = productId, cost = openingCostCents },
+                        tx, cancellationToken: ct));
+                }
+
+                tx.Commit();
+            }
+            catch
+            {
+                tx.Rollback();
+                throw;
+            }
+        }
+
+        return productId;
+    }
 }
-
-

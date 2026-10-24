@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Pos.Application.Catalog;
+using Pos.Application.Users;
 using Pos.Domain.Catalog;
 
 namespace Pos.Desktop.ViewModels;
@@ -15,16 +16,18 @@ public partial class AddProductViewModel : ObservableObject
     private readonly IUnitRepository _units;
     private readonly ICategoryRepository _categories;
     private readonly IPriceTierRepository _tiers;
+    private readonly IUserSession _session;
     private readonly ILogger<AddProductViewModel> _logger;
 
     private IReadOnlyList<Unit> _allUnits = Array.Empty<Unit>();
-    private IReadOnlyList<PriceTier> _allTiers = Array.Empty<PriceTier>();
+    private int _retailTierId = 1;
 
-    private int? _retailTierId;
-    private int? _wholesaleTierId;
-    private int? _contractorTierId;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEditMode))]
+    [NotifyPropertyChangedFor(nameof(WindowTitle))]
+    [NotifyPropertyChangedFor(nameof(SaveButtonText))]
+    private int? productId;
 
-    [ObservableProperty] private int? productId;
     [ObservableProperty] private string name = "";
     [ObservableProperty] private string sku = "";
     [ObservableProperty] private string barcode = "";
@@ -32,16 +35,13 @@ public partial class AddProductViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AlternativeUnitsForPicker))]
-    [NotifyPropertyChangedFor(nameof(IsEditMode))]
-    [NotifyPropertyChangedFor(nameof(WindowTitle))]
-    [NotifyPropertyChangedFor(nameof(SaveButtonText))]
     private Unit? selectedUnit;
 
     [ObservableProperty] private Category? selectedCategory;
     [ObservableProperty] private string reorderLevel = "0";
     [ObservableProperty] private string retailPriceText = "";
-    [ObservableProperty] private string wholesalePriceText = "";
-    [ObservableProperty] private string contractorPriceText = "";
+    [ObservableProperty] private string openingStockText = "";
+    [ObservableProperty] private string openingCostText = "";
     [ObservableProperty] private string errorMessage = "";
     [ObservableProperty] private bool isSaving;
 
@@ -49,7 +49,6 @@ public partial class AddProductViewModel : ObservableObject
     public ObservableCollection<Category> Categories { get; } = new();
     public ObservableCollection<ProductUnitEditorViewModel> SellingUnits { get; } = new();
 
-    /// <summary>Units available for a new alternative row — everything except the base unit.</summary>
     public IReadOnlyList<Unit> AlternativeUnitsForPicker =>
         _allUnits.Where(u => SelectedUnit is null || u.Id != SelectedUnit.Id).ToList();
 
@@ -64,29 +63,29 @@ public partial class AddProductViewModel : ObservableObject
         IUnitRepository units,
         ICategoryRepository categories,
         IPriceTierRepository tiers,
+        IUserSession session,
         ILogger<AddProductViewModel> logger)
     {
         _products = products;
         _units = units;
         _categories = categories;
         _tiers = tiers;
+        _session = session;
         _logger = logger;
     }
 
     public async Task LoadAsync()
     {
         _allUnits = await _units.ListAsync(includeInactive: false);
-        _allTiers = await _tiers.ListAsync(includeInactive: false);
+        IReadOnlyList<PriceTier> tierList = await _tiers.ListAsync(includeInactive: false);
+        _retailTierId = tierList.FirstOrDefault(t => string.Equals(t.Name, "Retail", StringComparison.OrdinalIgnoreCase))?.Id
+                        ?? tierList.FirstOrDefault()?.Id ?? 1;
 
         Units.Clear();
         foreach (Unit u in _allUnits) Units.Add(u);
 
         Categories.Clear();
         foreach (Category c in await _categories.ListAsync(includeInactive: false)) Categories.Add(c);
-
-        _retailTierId = _allTiers.FirstOrDefault(t => string.Equals(t.Name, "Retail", StringComparison.OrdinalIgnoreCase))?.Id;
-        _wholesaleTierId = _allTiers.FirstOrDefault(t => string.Equals(t.Name, "Wholesale", StringComparison.OrdinalIgnoreCase))?.Id;
-        _contractorTierId = _allTiers.FirstOrDefault(t => string.Equals(t.Name, "Contractor", StringComparison.OrdinalIgnoreCase))?.Id;
 
         if (ProductId is null)
         {
@@ -110,16 +109,15 @@ public partial class AddProductViewModel : ObservableObject
         var barcodes = await _products.ListBarcodesAsync(existing.Id);
         ExistingBarcode = barcodes.FirstOrDefault()?.Barcode ?? "";
 
-        // Load base prices
-        await LoadPriceIntoField(existing.Id, existing.BaseUnitId, _retailTierId, v => RetailPriceText = v);
-        await LoadPriceIntoField(existing.Id, existing.BaseUnitId, _wholesaleTierId, v => WholesalePriceText = v);
-        await LoadPriceIntoField(existing.Id, existing.BaseUnitId, _contractorTierId, v => ContractorPriceText = v);
+        // Load base price (retail only)
+        long? retail = await _products.GetPriceForUnitAsync(existing.Id, _retailTierId, existing.BaseUnitId);
+        RetailPriceText = retail is null ? "" : CentsToShillingsString(retail.Value);
 
-        // Load existing alternative units and their prices
-        IReadOnlyList<ProductUnitInfo> units = await _products.ListProductUnitsAsync(existing.Id);
+        // Load alternative units + their retail prices
+        IReadOnlyList<ProductUnitInfo> unitInfos = await _products.ListProductUnitsAsync(existing.Id);
         IReadOnlyList<ProductPriceInfo> allPrices = await _products.ListAllPricesAsync(existing.Id);
 
-        foreach (ProductUnitInfo u in units.Where(u => !u.IsBase))
+        foreach (ProductUnitInfo u in unitInfos.Where(u => !u.IsBase))
         {
             ProductUnitEditorViewModel editor = new(AlternativeUnitsForPicker)
             {
@@ -127,24 +125,11 @@ public partial class AddProductViewModel : ObservableObject
                 FactorText = (u.FactorMilli / 1000m).ToString("0.###", CultureInfo.InvariantCulture),
             };
 
-            List<ProductPriceInfo> unitPrices = allPrices.Where(p => p.UnitId == u.UnitId).ToList();
-            ProductPriceInfo? retail = unitPrices.FirstOrDefault(p => _retailTierId is not null && p.TierId == _retailTierId.Value);
-            ProductPriceInfo? wholesale = unitPrices.FirstOrDefault(p => _wholesaleTierId is not null && p.TierId == _wholesaleTierId.Value);
-            ProductPriceInfo? contractor = unitPrices.FirstOrDefault(p => _contractorTierId is not null && p.TierId == _contractorTierId.Value);
-
-            if (retail is not null) editor.RetailPriceText = CentsToShillingsString(retail.PriceCents);
-            if (wholesale is not null) editor.WholesalePriceText = CentsToShillingsString(wholesale.PriceCents);
-            if (contractor is not null) editor.ContractorPriceText = CentsToShillingsString(contractor.PriceCents);
+            ProductPriceInfo? retailPrice = allPrices.FirstOrDefault(p => p.TierId == _retailTierId && p.UnitId == u.UnitId);
+            if (retailPrice is not null) editor.RetailPriceText = CentsToShillingsString(retailPrice.PriceCents);
 
             SellingUnits.Add(editor);
         }
-    }
-
-    private async Task LoadPriceIntoField(int productId, int unitId, int? tierId, Action<string> assign)
-    {
-        if (tierId is null) return;
-        long? p = await _products.GetPriceForUnitAsync(productId, tierId.Value, unitId);
-        assign(p is null ? "" : CentsToShillingsString(p.Value));
     }
 
     [RelayCommand]
@@ -154,7 +139,7 @@ public partial class AddProductViewModel : ObservableObject
 
         if (SelectedUnit is null)
         {
-            ErrorMessage = "Pick a base unit first.";
+            ErrorMessage = "Pick a sold-by unit first.";
             return;
         }
 
@@ -165,12 +150,12 @@ public partial class AddProductViewModel : ObservableObject
             return;
         }
 
-        HashSet<int> alreadyUsed = SellingUnits
+        HashSet<int> used = SellingUnits
             .Where(e => e.SelectedUnit is not null)
             .Select(e => e.SelectedUnit!.Id)
             .ToHashSet();
 
-        List<Unit> remaining = available.Where(u => !alreadyUsed.Contains(u.Id)).ToList();
+        List<Unit> remaining = available.Where(u => !used.Contains(u.Id)).ToList();
         if (remaining.Count == 0)
         {
             ErrorMessage = "All available units are already added.";
@@ -198,13 +183,13 @@ public partial class AddProductViewModel : ObservableObject
 
         if (string.IsNullOrWhiteSpace(Name))
         {
-            ErrorMessage = "Name is required.";
+            ErrorMessage = "Product name is required.";
             return;
         }
 
         if (SelectedUnit is null)
         {
-            ErrorMessage = "Sold by is required.";
+            ErrorMessage = "Sold by (base unit) is required.";
             return;
         }
 
@@ -217,29 +202,23 @@ public partial class AddProductViewModel : ObservableObject
         string? trimmedBarcode = string.IsNullOrWhiteSpace(Barcode) ? null : Barcode.Trim();
         if (!IsEditMode && trimmedBarcode is not null && !BarcodePattern().IsMatch(trimmedBarcode))
         {
-            ErrorMessage = "Code may contain letters, digits and dashes only.";
+            ErrorMessage = "Barcode may contain letters, digits and dashes only.";
             return;
         }
 
-        // Parse base prices
+        // Base price
         var basePrices = new Dictionary<int, long>();
-        if (_retailTierId is not null && !string.IsNullOrWhiteSpace(RetailPriceText))
+        if (!string.IsNullOrWhiteSpace(RetailPriceText))
         {
-            if (!TryParseShillingsToCents(RetailPriceText, out long cents, out string? err)) { ErrorMessage = err ?? "Retail price invalid."; return; }
-            basePrices[_retailTierId.Value] = cents;
-        }
-        if (_wholesaleTierId is not null && !string.IsNullOrWhiteSpace(WholesalePriceText))
-        {
-            if (!TryParseShillingsToCents(WholesalePriceText, out long cents, out string? err)) { ErrorMessage = err ?? "Wholesale price invalid."; return; }
-            basePrices[_wholesaleTierId.Value] = cents;
-        }
-        if (_contractorTierId is not null && !string.IsNullOrWhiteSpace(ContractorPriceText))
-        {
-            if (!TryParseShillingsToCents(ContractorPriceText, out long cents, out string? err)) { ErrorMessage = err ?? "Contractor price invalid."; return; }
-            basePrices[_contractorTierId.Value] = cents;
+            if (!TryParseShillingsToCents(RetailPriceText, out long cents, out string? err))
+            {
+                ErrorMessage = err ?? "Selling price is not valid.";
+                return;
+            }
+            basePrices[_retailTierId] = cents;
         }
 
-        // Parse alternative units
+        // Alternative units
         var alternativeUnits = new List<ProductUnitSave>();
         var seenUnitIds = new HashSet<int>();
         foreach (ProductUnitEditorViewModel editor in SellingUnits)
@@ -252,7 +231,7 @@ public partial class AddProductViewModel : ObservableObject
 
             if (editor.SelectedUnit.Id == SelectedUnit.Id)
             {
-                ErrorMessage = "A selling unit cannot be the same as the base unit.";
+                ErrorMessage = "A selling unit cannot be the same as the sold-by unit.";
                 return;
             }
 
@@ -265,30 +244,48 @@ public partial class AddProductViewModel : ObservableObject
             if (!decimal.TryParse(editor.FactorText?.Trim(), NumberStyles.Number,
                     CultureInfo.InvariantCulture, out decimal factorValue) || factorValue <= 0)
             {
-                ErrorMessage = $"Factor for '{editor.SelectedUnit.Name}' must be a positive number (e.g. 25 for '1 kg = 25 pieces').";
+                ErrorMessage = $"How many {SelectedUnit.Name} in one {editor.SelectedUnit.Name}? Enter a positive number.";
                 return;
             }
 
             long factorMilli = (long)decimal.Round(factorValue * 1000m, 0, MidpointRounding.AwayFromZero);
 
             var prices = new List<ProductUnitPriceSave>();
-            if (_retailTierId is not null && !string.IsNullOrWhiteSpace(editor.RetailPriceText))
+            if (!string.IsNullOrWhiteSpace(editor.RetailPriceText))
             {
-                if (!TryParseShillingsToCents(editor.RetailPriceText, out long c, out string? e)) { ErrorMessage = $"Retail price for '{editor.SelectedUnit.Name}': {e}"; return; }
-                prices.Add(new ProductUnitPriceSave(_retailTierId.Value, c));
-            }
-            if (_wholesaleTierId is not null && !string.IsNullOrWhiteSpace(editor.WholesalePriceText))
-            {
-                if (!TryParseShillingsToCents(editor.WholesalePriceText, out long c, out string? e)) { ErrorMessage = $"Wholesale price for '{editor.SelectedUnit.Name}': {e}"; return; }
-                prices.Add(new ProductUnitPriceSave(_wholesaleTierId.Value, c));
-            }
-            if (_contractorTierId is not null && !string.IsNullOrWhiteSpace(editor.ContractorPriceText))
-            {
-                if (!TryParseShillingsToCents(editor.ContractorPriceText, out long c, out string? e)) { ErrorMessage = $"Contractor price for '{editor.SelectedUnit.Name}': {e}"; return; }
-                prices.Add(new ProductUnitPriceSave(_contractorTierId.Value, c));
+                if (!TryParseShillingsToCents(editor.RetailPriceText, out long c, out string? e))
+                {
+                    ErrorMessage = $"Price for '{editor.SelectedUnit.Name}': {e}";
+                    return;
+                }
+                prices.Add(new ProductUnitPriceSave(_retailTierId, c));
             }
 
             alternativeUnits.Add(new ProductUnitSave(editor.SelectedUnit.Id, factorMilli, prices));
+        }
+
+        // Opening stock (create mode only)
+        long openingStockMilli = 0;
+        long openingCostCents = 0;
+
+        if (!IsEditMode && !string.IsNullOrWhiteSpace(OpeningStockText))
+        {
+            if (!Pos.Domain.Quantity.TryParse(OpeningStockText, out Pos.Domain.Quantity qty, out string? qtyErr))
+            {
+                ErrorMessage = $"Opening stock: {qtyErr}";
+                return;
+            }
+            openingStockMilli = qty.Milli;
+
+            if (!string.IsNullOrWhiteSpace(OpeningCostText))
+            {
+                if (!TryParseShillingsToCents(OpeningCostText, out long c, out string? costErr))
+                {
+                    ErrorMessage = $"Opening cost: {costErr}";
+                    return;
+                }
+                openingCostCents = c;
+            }
         }
 
         try
@@ -319,8 +316,21 @@ public partial class AddProductViewModel : ObservableObject
                 };
             }
 
-            int id = await _products.SaveProductWithAllPricesAsync(
-                product, trimmedBarcode, basePrices, alternativeUnits);
+            int id;
+            if (IsEditMode)
+            {
+                id = await _products.SaveProductWithAllPricesAsync(
+                    product, trimmedBarcode, basePrices, alternativeUnits);
+            }
+            else
+            {
+                id = await _products.SaveProductWithAllPricesAndOpeningStockAsync(
+                    product, trimmedBarcode, basePrices, alternativeUnits,
+                    openingStockMilli, openingCostCents,
+                    DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    _session.RequireUserId);
+            }
+
             Saved?.Invoke(this, id);
         }
         catch (Exception ex)
@@ -343,10 +353,7 @@ public partial class AddProductViewModel : ObservableObject
         error = null;
 
         string trimmed = raw?.Trim() ?? "";
-        if (trimmed.Length == 0)
-        {
-            return true;
-        }
+        if (trimmed.Length == 0) return true;
 
         if (!decimal.TryParse(trimmed, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal shillings))
         {

@@ -99,5 +99,27 @@ public interface IProductRepository
         IReadOnlyDictionary<int, long> baseTierPrices,
         IReadOnlyList<ProductUnitSave> alternativeUnits,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Same as SaveProductWithAllPricesAsync, plus an optional opening stock
+    /// movement created in the same transaction. Used when the owner is
+    /// adding an existing shop's inventory.
+    ///
+    /// openingStockMilli: quantity of the base unit (thousandths). 0 = no opening movement.
+    /// openingCostCents: cost per base unit. Used for avg_cost. 0 = cost unknown.
+    /// businessDate: required when openingStockMilli > 0.
+    /// userId: required when openingStockMilli > 0 (audit attribution).
+    /// </summary>
+    Task<int> SaveProductWithAllPricesAndOpeningStockAsync(
+        Product product,
+        string? barcode,
+        IReadOnlyDictionary<int, long> baseTierPrices,
+        IReadOnlyList<ProductUnitSave> alternativeUnits,
+        long openingStockMilli,
+        long openingCostCents,
+        string? businessDate,
+        int? userId,
+        CancellationToken ct = default);
 }
+
 

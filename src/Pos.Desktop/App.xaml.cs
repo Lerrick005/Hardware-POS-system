@@ -78,6 +78,7 @@ public partial class App : System.Windows.Application
         services.AddSingleton<IDashboardQuery, DashboardQuery>();
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IExpensesService, ExpensesService>();
+        services.AddSingleton<IStockAdjustmentService, StockAdjustmentService>();
         services.AddSingleton<ICashSessionService, CashSessionService>();
         services.AddSingleton<ICashSessionQuery, CashSessionQuery>();
 
@@ -97,6 +98,8 @@ public partial class App : System.Windows.Application
         services.AddSingleton<ExpensesViewModel>();
         services.AddTransient<AddExpenseViewModel>();
         services.AddTransient<AddExpenseView>();
+        services.AddTransient<AdjustStockViewModel>();
+        services.AddTransient<AdjustStockView>();
         services.AddTransient<OpenShiftViewModel>();
         services.AddTransient<OpenShiftView>();
         services.AddTransient<CloseShiftViewModel>();
@@ -184,6 +187,14 @@ public partial class App : System.Windows.Application
         productsVm.CreateCategoriesDialog = () =>
         {
             CategoriesView dialog = _services.GetRequiredService<CategoriesView>();
+            dialog.Owner = MainWindow;
+            return dialog;
+        };
+        productsVm.CreateAdjustStockDialog = (int productId) =>
+        {
+            AdjustStockView dialog = _services.GetRequiredService<AdjustStockView>();
+            AdjustStockViewModel vm = (AdjustStockViewModel)dialog.DataContext;
+            vm.ProductId = productId;
             dialog.Owner = MainWindow;
             return dialog;
         };
@@ -320,5 +331,6 @@ public partial class App : System.Windows.Application
         base.OnExit(e);
     }
 }
+
 
 
